@@ -4,6 +4,7 @@ import android.app.Service
 import android.content.ContentValues
 import android.content.Intent
 import android.os.IBinder
+import android.util.Log
 
 
 class ServiceINFOBattery : Service() {
@@ -29,6 +30,7 @@ class ServiceINFOBattery : Service() {
         cv.put("status", bat_status)
         // обновляем запись
         db.update("batter", cv, "name='BATTER'", null)
+        Log.d("Ydav","обновляем базу БАТАРЕЯ")
         dbHelper.close()
         stopSelf()
         return START_NOT_STICKY

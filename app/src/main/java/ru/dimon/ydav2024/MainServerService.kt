@@ -9,7 +9,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.database.Cursor
-import android.database.sqlite.SQLiteDatabase
 import android.icu.util.GregorianCalendar
 import android.os.Build
 import android.os.IBinder
@@ -90,15 +89,15 @@ class MainServerService : Service() {
 
 
             // из базы об состотоянии батареи
-            val sel1 = "name = ?"
-            val selA1 = arrayOf("BATTER")
-            val db1: SQLiteDatabase
-            val dbHelper1 = DBHelper(this)
-            db1 = dbHelper1.readableDatabase
-            val cur1: Cursor = db1.query("batter", null, sel1, selA1, null, null, null)
+            val dbHelper = DBHelper(this)
+            val db = dbHelper.readableDatabase
+            val cursor: Cursor = db.query("batter", null, "name = ?", arrayOf("BATTER"), null, null, null)
+            var id_temper =cursor.getColumnIndex("lavel")
+            Log.d("Ydav",cursor.getString(id_temper))
             val bat_status =
-                        "Y" + cur1.getString(2) + "YU" + cur1.getString(3) + "UI" + cur1.getString(4) + "IP" + cur1.getString(5) + "P"
-            cur1.close()
+                        "Y" + cursor.getString(1) + "YU" + cursor.getString(2) + "UI" + cursor.getString(3) + "IP" + cursor.getString(4) + "P"
+            cursor.close()
+            dbHelper.close()
             //получение информации о телефоне и сети
             val signalStrength=SignalStrength(this)
             signalStrength.readLavel()
