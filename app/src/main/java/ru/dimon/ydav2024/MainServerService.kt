@@ -1,18 +1,13 @@
 package ru.dimon.ydav2024
 
-import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
-import android.database.Cursor
 import android.icu.util.GregorianCalendar
-import android.os.Build
 import android.os.IBinder
-import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import java.io.BufferedReader
@@ -55,62 +50,32 @@ class MainServerService : Service() {
         val ipHost = intent?.getStringExtra("Host")
         Log.i("ydav", "service start $ipHost")
         startForeground(NOTIFICATION_ID, newOngoingNotification(ipHost))
-        val BatterInfo = Batter()
-        registerReceiver(BatterInfo, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        //получение информации о телефоне и сети
-        val signalStrengthm=SignalStrength(this)
-        signalStrengthm.runStrength()
-
-        Thread({
+        val batteryBroadcastReceiver = BatteryBroadcastReceiver()
+        registerReceiver(batteryBroadcastReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        Thread{
             val socketserver = ServerSocket(38300, 2, InetAddress.getByName(ipHost))
-            val socket = socketserver.accept()
-            val output = PrintWriter(socket.getOutputStream(), true)
-            val  input = BufferedReader(InputStreamReader(socket.getInputStream()))
-            val str = input.readLine()
-            Log.i("ydav", str)
-            val telephonyManager = getSystemService(TELEPHONY_SERVICE) as TelephonyManager
-            // передать время
-            val gregorianCalendar = GregorianCalendar()
-            var networkType=""
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                val res = checkSelfPermission(Manifest.permission.READ_PHONE_STATE)
-                if (res != PackageManager.PERMISSION_GRANTED) {
-                    networkType = when (telephonyManager.networkType) {
-                        TelephonyManager.NETWORK_TYPE_GPRS, TelephonyManager.NETWORK_TYPE_EDGE, TelephonyManager.NETWORK_TYPE_CDMA -> "2G"
-                                TelephonyManager.NETWORK_TYPE_1xRTT,
-                        TelephonyManager.NETWORK_TYPE_UMTS, TelephonyManager.NETWORK_TYPE_EVDO_0, TelephonyManager.NETWORK_TYPE_EVDO_A, TelephonyManager.NETWORK_TYPE_HSDPA, TelephonyManager.NETWORK_TYPE_HSUPA, TelephonyManager.NETWORK_TYPE_HSPA, TelephonyManager.NETWORK_TYPE_EVDO_B, TelephonyManager.NETWORK_TYPE_EHRPD, TelephonyManager.NETWORK_TYPE_HSPAP -> "3G"
-                        TelephonyManager.NETWORK_TYPE_LTE -> "4G"
-                        else -> "Unknown"
-                    }
-                }
-            }
 
-            val CountConntact=0
+            while (true) {
+                val socket = socketserver.accept()
+                val output = PrintWriter(socket.getOutputStream(), true)
+                val input = BufferedReader(InputStreamReader(socket.getInputStream()))
+                val str = input.readLine()
+                Log.i("ydav", str)
 
-
-            // из базы об состотоянии батареи
-            val dbHelper = DBHelper(this)
-            val db = dbHelper.readableDatabase
-            val cursor: Cursor = db.query("batter", null, "name = ?", arrayOf("BATTER"), null, null, null)
-            var id_temper =cursor.getColumnIndex("lavel")
-            Log.d("Ydav",cursor.getString(id_temper))
-            val bat_status =
-                        "Y" + cursor.getString(1) + "YU" + cursor.getString(2) + "UI" + cursor.getString(3) + "IP" + cursor.getString(4) + "P"
-            cursor.close()
-            dbHelper.close()
-            //получение информации о телефоне и сети
-            val signalStrength=SignalStrength(this)
-            signalStrength.readLavel()
-            val res="привет;" + String.format("%tc", gregorianCalendar.getTimeInMillis()) +
-                    networkType + " " + telephonyManager.simCountryIso + " " + telephonyManager.simOperatorName +
-                    "R" + signalStrength.RSSI + "RA" + signalStrength.ASU + "AE" + signalStrength.ERR +
-                    "E T" +signalStrength.Nomer + "T" + "S" + 0 + "S" + "B" + CountConntact.toString()+ "B" + "C" + bat_status + "CF" + 0 + "FG" + 0 + "G"
-            Log.d("Ydav", res)
-            output.println(res)
-
-
-            socketserver.close()
-        }).start()
+                // об состоянии батареи
+                val battery = Battery(this)
+                //получение информации о сети
+                val myCellInfoLte = MyCellInfoLte(this, this.mainExecutor)
+                myCellInfoLte.run()
+                val inf = """{"time":"${String.format("%tc", GregorianCalendar().timeInMillis)}",
+               "battery":${battery.json()},
+               "signal":${myCellInfoLte.json()}}
+                                           
+               """
+                Log.i("Ydav",inf)
+                output.println(inf)
+           }
+        }.start()
         return START_STICKY
     }
 
