@@ -72,7 +72,6 @@ class MainServerService : Service() {
                "signal":${myCellInfoLte.json()}}
                                            
                """
-                Log.i("Ydav",inf)
                 output.println(inf)
            }
         }.start()

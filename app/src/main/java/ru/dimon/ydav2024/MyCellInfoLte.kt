@@ -77,14 +77,13 @@ class MyCellInfoLte(context: Context, mainExecute: Executor) {
 
     fun json(): String {
         this.read()
-        return """{"RSSI":${this.pRSSI},
-            "RSRP":${this.pRSRP},
-            "RSSNR":${this.pRSSNR},
-            "RSRQ":"${this.pRSRQ}",
-            "networkType":"${this.networkType}",
-            "simOperatorName":"${this.simOperatorName}",
-            "simOperator":"${this.simOperator}",
-            "simCountyIso":"${this.simCountyIso}"}"""
+        return """{"rssi":${this.pRSSI},
+            "rsrp":${this.pRSRP},
+            "rsrq":${this.pRSRQ},
+            "network_type":"${this.networkType}",
+            "sim_operator_name":"${this.simOperatorName}",
+            "sim_operator":"${this.simOperator}",
+            "sim_county_iso":"${this.simCountyIso}"}"""
     }
 
     companion object {

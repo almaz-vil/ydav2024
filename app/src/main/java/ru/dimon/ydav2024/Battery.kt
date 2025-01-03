@@ -62,7 +62,6 @@ class Battery(context: Context) {
         this.read()
         return """{"tempetapure":${this.temperature},
                 "lavel":${this.lavel},
-                "maxlavel":${this.maxlavel},
                 "status":"${this.status}"}"""
     }
 }

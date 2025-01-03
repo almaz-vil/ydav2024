@@ -24,16 +24,15 @@
         <service
             android:name=".BatteryService"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="false" />
         <service
             android:name=".MainServerService"
-            android:exported="true"
+            android:exported="false"
             android:foregroundServiceType="systemExempted" />
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.Ydav2024">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
