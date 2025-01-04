@@ -19,7 +19,7 @@ class DBHelper(context: Context):
         sQLiteDatabase?.execSQL("create table outsms (_id integer primary key autoincrement, nomerfona string, textmsg string, nomerspk string, error string, result string);")
         sQLiteDatabase?.execSQL("create table batter (_id integer primary key autoincrement, name string, temper string, lavel string, maxlavel string, status string);")
         sQLiteDatabase?.execSQL("insert into batter (name, temper, lavel, maxlavel, status) values ('BATTER','-1','-1','-1','-1')")
-        sQLiteDatabase?.execSQL("create table infolte (_id integer primary key autoincrement, name string, RSSI integer, RSRP integer, RSSNR integer, RSRQ integer, RSRQ integer);")
+        sQLiteDatabase?.execSQL("create table infolte (_id integer primary key autoincrement, name string, RSSI integer, RSRP integer, RSSNR integer, RSRQ integer);")
         sQLiteDatabase?.execSQL("insert into infolte (name, RSSI, RSRP, RSSNR, RSRQ) values ('INFOLTE',-1,-1,-1,-1)")
     }
 

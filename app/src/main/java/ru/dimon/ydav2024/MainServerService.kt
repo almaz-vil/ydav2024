@@ -4,8 +4,10 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.content.ComponentName
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.ServiceConnection
 import android.icu.util.GregorianCalendar
 import android.os.IBinder
 import android.util.Log
@@ -49,9 +51,13 @@ class MainServerService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val ipHost = intent?.getStringExtra("Host")
         Log.i("ydav", "service start $ipHost")
+
+
         startForeground(NOTIFICATION_ID, newOngoingNotification(ipHost))
         val batteryBroadcastReceiver = BatteryBroadcastReceiver()
         registerReceiver(batteryBroadcastReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val readCallBroadcastReceiver = ReadCallBroadcastReceiver()
+        registerReceiver(readCallBroadcastReceiver, IntentFilter("android.intent.action.PHONE_STATE"))
         Thread{
             val socketserver = ServerSocket(38300, 2, InetAddress.getByName(ipHost))
 
