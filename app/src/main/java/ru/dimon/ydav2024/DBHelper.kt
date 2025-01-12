@@ -13,8 +13,7 @@ class DBHelper(context: Context):
 
     override
     fun onCreate(sQLiteDatabase:SQLiteDatabase?) {
-        sQLiteDatabase?.execSQL("create table caltel (_id integer primary key autoincrement, name string, nomer string);")
-        sQLiteDatabase?.execSQL("insert into caltel (name, nomer) values ('CALTEL','нет')")
+        sQLiteDatabase?.execSQL("create table caltel (_id integer primary key autoincrement, phone string, status string, time string);")
         sQLiteDatabase?.execSQL("create table insms (_id integer primary key autoincrement, nomerfona string, textmsg string, dattime string);")
         sQLiteDatabase?.execSQL("create table outsms (_id integer primary key autoincrement, nomerfona string, textmsg string, nomerspk string, error string, result string);")
         sQLiteDatabase?.execSQL("create table batter (_id integer primary key autoincrement, name string, temper string, lavel string, maxlavel string, status string);")

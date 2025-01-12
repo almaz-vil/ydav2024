@@ -8,10 +8,11 @@ import android.telecom.CallScreeningService
 import android.util.Log
 
 
-class MyCallScreeningService: CallScreeningService() {
+class PhoneCallScreeningService: CallScreeningService() {
 
     override fun onScreenCall(details: Details) {
         val  phoneNomer = details.handle.schemeSpecificPart as String
-        Log.d("Ydav", phoneNomer)
+        val phoneStatus = PhoneStatus(this@PhoneCallScreeningService)
+        phoneStatus.write(phone = phoneNomer)
     }
 }

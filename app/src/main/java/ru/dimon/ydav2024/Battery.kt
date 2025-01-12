@@ -13,8 +13,8 @@ class Battery(context: Context) {
     private val con=context
 
     private var status:String = ""
-    private var lavel:Float = Float.NaN
-    private var maxlavel:Float = Float.NaN
+    private var level:Float = Float.NaN
+    private var max_level:Float = Float.NaN
     private var temperature:Float = Float.NaN
 
     /**
@@ -22,16 +22,16 @@ class Battery(context: Context) {
      */
     fun write(
         status:String,
-        lavel:Float,
-        maxlavel:Float,
+        level:Float,
+        maxLevel:Float,
         temperature:Float
     ){
         val dbHelper = DBHelper(con)
         val db = dbHelper.writableDatabase
         val cv = ContentValues()
         cv.put("temper", temperature)
-        cv.put("lavel", lavel)
-        cv.put("maxlavel", maxlavel)
+        cv.put("lavel", level)
+        cv.put("maxlavel", maxLevel)
         cv.put("status", status)
         db.update("batter", cv, "name='BATTER'", null)
         Log.d("Ydav","обновляем базу БАТАРЕЯ")
@@ -43,14 +43,14 @@ class Battery(context: Context) {
         val db = dbHelper.readableDatabase
         val cursor: Cursor = db.query("batter", null, "name = ?", arrayOf("BATTER"), null, null, null)
         val idTemperature =cursor.getColumnIndex("temper")
-        val idLavel =cursor.getColumnIndex("lavel")
-        val idMaxlavel =cursor.getColumnIndex("maxlavel")
+        val idLevel =cursor.getColumnIndex("lavel")
+        val idMaxLevel =cursor.getColumnIndex("maxlavel")
         val idStatus =cursor.getColumnIndex("status")
         if(cursor.moveToFirst()) {
             do {
                 this.temperature = cursor.getFloat(idTemperature)
-                this.lavel = cursor.getFloat(idLavel)
-                this.maxlavel = cursor.getFloat(idMaxlavel)
+                this.level = cursor.getFloat(idLevel)
+                this.max_level = cursor.getFloat(idMaxLevel)
                 this.status = cursor.getString(idStatus)
             } while(cursor.moveToNext())
         }
@@ -60,8 +60,8 @@ class Battery(context: Context) {
 
     fun json():String{
         this.read()
-        return """{"tempetapure":${this.temperature},
-                "lavel":${this.lavel},
+        return """{"temperature":${this.temperature},
+                "level":${this.level},
                 "status":"${this.status}"}"""
     }
 }

@@ -4,10 +4,8 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
-import android.content.ComponentName
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.ServiceConnection
 import android.icu.util.GregorianCalendar
 import android.os.IBinder
 import android.util.Log
@@ -56,8 +54,8 @@ class MainServerService : Service() {
         startForeground(NOTIFICATION_ID, newOngoingNotification(ipHost))
         val batteryBroadcastReceiver = BatteryBroadcastReceiver()
         registerReceiver(batteryBroadcastReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        val readCallBroadcastReceiver = ReadCallBroadcastReceiver()
-        registerReceiver(readCallBroadcastReceiver, IntentFilter("android.intent.action.PHONE_STATE"))
+        val statusCallBroadcastReceiver = StatusCallBroadcastReceiver()
+        registerReceiver(statusCallBroadcastReceiver, IntentFilter("android.intent.action.PHONE_STATE"))
         Thread{
             val socketserver = ServerSocket(38300, 2, InetAddress.getByName(ipHost))
 
@@ -65,20 +63,34 @@ class MainServerService : Service() {
                 val socket = socketserver.accept()
                 val output = PrintWriter(socket.getOutputStream(), true)
                 val input = BufferedReader(InputStreamReader(socket.getInputStream()))
-                val str = input.readLine()
-                Log.i("ydav", str)
-
-                // об состоянии батареи
-                val battery = Battery(this)
-                //получение информации о сети
-                val myCellInfoLte = MyCellInfoLte(this, this.mainExecutor)
-                myCellInfoLte.run()
-                val inf = """{"time":"${String.format("%tc", GregorianCalendar().timeInMillis)}",
-               "battery":${battery.json()},
-               "signal":${myCellInfoLte.json()}}
-                                           
-               """
-                output.println(inf)
+                val input_comand = input.readLine()
+                when(input_comand){
+                    "INFO" ->{
+                        // об состоянии батареи
+                        val battery = Battery(this)
+                        //получение информации о сети
+                        val myCellInfoLte = MyCellInfoLte(this, this.mainExecutor)
+                        myCellInfoLte.run()
+                        //информация о звонках
+                        val phoneStatus = PhoneStatus(this)
+                        val inf = """{"time":"${String.format("%tc", GregorianCalendar().timeInMillis)}",
+                                   "battery":${battery.json()},
+                                   "signal":${myCellInfoLte.json()},
+                                   "phone":${phoneStatus.json()}}
+                                                               
+                                  """
+                        output.println(inf)
+                    }
+                    "PHONE" ->{
+                        //информация о звонках
+                        val phoneStatus = PhoneStatus(this)
+                        val inf = """{"time":"${String.format("%tc", GregorianCalendar().timeInMillis)}",
+                                   "phone":${phoneStatus.json()}}
+                                                               
+                                   """
+                        output.println(inf)
+                    }
+                }
            }
         }.start()
         return START_STICKY
