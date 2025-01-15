@@ -2,7 +2,6 @@ package ru.dimon.ydav2024
 
 import android.Manifest
 import android.app.Service.TELEPHONY_SERVICE
-import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.telephony.CellInfo
@@ -11,7 +10,7 @@ import android.telephony.TelephonyManager
 import androidx.core.content.ContextCompat.checkSelfPermission
 import java.util.concurrent.Executor
 
-class MyCellInfoLte(context: Context, mainExecute: Executor) {
+class MyCellInfoLte(context: Context, mainExecute: Executor): DbWrite {
     private val _context=context
     private val _mainExecute=mainExecute
     private var pRSSI=-1
@@ -38,15 +37,8 @@ class MyCellInfoLte(context: Context, mainExecute: Executor) {
                     val vRSSI=cellInfoLte.cellSignalStrength.rssi
                     val vRSSNR=cellInfoLte.cellSignalStrength.rssnr
                     val vRSRQ=cellInfoLte.cellSignalStrength.rsrq
-                    val dbHelper = DBHelper(_context)
-                    val cv = ContentValues()
-                    val db: SQLiteDatabase = dbHelper.writableDatabase
-                    cv.put("RSRP", vRSRP)
-                    cv.put("RSSI", vRSSI)
-                    cv.put("RSSNR", vRSSNR)
-                    cv.put("RSRQ", vRSRQ)
-                    db.update("infolte", cv, "name='INFOLTE'", null)
-                    dbHelper.close()
+                    val sql = "UPDATE infolte SET RSRP=$vRSRP, RSSI=$vRSSI, RSSNR=$vRSSNR, RSRQ=$vRSRQ WHERE name='INFOLTE'"
+                    exec(_context, sql)
                 }
             }
 
@@ -73,6 +65,8 @@ class MyCellInfoLte(context: Context, mainExecute: Executor) {
             } while(cursor.moveToNext())
         }
         cursor.close()
+        db.close()
+        dbHelper.close()
     }
 
     fun json(): String {

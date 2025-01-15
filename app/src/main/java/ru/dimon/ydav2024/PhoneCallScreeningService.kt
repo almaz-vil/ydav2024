@@ -5,7 +5,6 @@ package ru.dimon.ydav2024
  */
 import android.telecom.Call.Details
 import android.telecom.CallScreeningService
-import android.util.Log
 
 
 class PhoneCallScreeningService: CallScreeningService() {

@@ -1,16 +1,14 @@
 package ru.dimon.ydav2024
 
-import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
-import android.util.Log
 
 /**
  * Запись и чтение информации о батареи устройства
  */
-class Battery(context: Context) {
+class Battery(context: Context):DbWrite {
 
-    private val con=context
+    private val _context=context
 
     private var status:String = ""
     private var level:Float = Float.NaN
@@ -26,35 +24,29 @@ class Battery(context: Context) {
         maxLevel:Float,
         temperature:Float
     ){
-        val dbHelper = DBHelper(con)
-        val db = dbHelper.writableDatabase
-        val cv = ContentValues()
-        cv.put("temper", temperature)
-        cv.put("lavel", level)
-        cv.put("maxlavel", maxLevel)
-        cv.put("status", status)
-        db.update("batter", cv, "name='BATTER'", null)
-        Log.d("Ydav","обновляем базу БАТАРЕЯ")
-        dbHelper.close()
+        val sql = "UPDATE batter SET temper=$temperature, lavel=$level, maxlavel=$maxLevel, status='$status' WHERE name='BATTER'"
+        exec(_context, sql)
     }
 
-   private fun read(){
-        val dbHelper = DBHelper(con)
+    private fun read(){
+        val dbHelper = DBHelper(_context)
         val db = dbHelper.readableDatabase
-        val cursor: Cursor = db.query("batter", null, "name = ?", arrayOf("BATTER"), null, null, null)
-        val idTemperature =cursor.getColumnIndex("temper")
-        val idLevel =cursor.getColumnIndex("lavel")
-        val idMaxLevel =cursor.getColumnIndex("maxlavel")
-        val idStatus =cursor.getColumnIndex("status")
-        if(cursor.moveToFirst()) {
+        val cursor: Cursor =
+            db.query("batter", null, "name = ?", arrayOf("BATTER"), null, null, null)
+        val idTemperature = cursor.getColumnIndex("temper")
+        val idLevel = cursor.getColumnIndex("lavel")
+        val idMaxLevel = cursor.getColumnIndex("maxlavel")
+        val idStatus = cursor.getColumnIndex("status")
+        if (cursor.moveToFirst()) {
             do {
                 this.temperature = cursor.getFloat(idTemperature)
                 this.level = cursor.getFloat(idLevel)
                 this.max_level = cursor.getFloat(idMaxLevel)
                 this.status = cursor.getString(idStatus)
-            } while(cursor.moveToNext())
+            } while (cursor.moveToNext())
         }
         cursor.close()
+        db.close()
         dbHelper.close()
     }
 

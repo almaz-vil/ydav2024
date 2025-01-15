@@ -1,19 +1,16 @@
 package ru.dimon.ydav2024
 
-import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
-import android.icu.util.GregorianCalendar
 import java.time.LocalDateTime
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 /**
  * Запись и чтение информации о звонке
  */
-class PhoneStatus(context: Context) {
+class PhoneStatus(context: Context):DbWrite {
 
-    private val con=context
+    private val _context=context
 
     fun write(
         phone:String="",
@@ -21,21 +18,16 @@ class PhoneStatus(context: Context) {
     ){
         val time= LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern("HH:mm:ss dd-MM-yyyy")
-        val dbHelper = DBHelper(con)
-        val db = dbHelper.writableDatabase
-        val cv = ContentValues()
-        cv.put("phone", phone)
-        cv.put("status", status)
-        cv.put("time", time.format(formatter))
-        db.insert("caltel",null, cv)
-        dbHelper.close()
+        val format_time = time.format(formatter)
+        val sql = "INSERT INTO caltel(phone, status, time) VALUES ('$phone', '$status', '$format_time')"
+        exec(_context, sql)
     }
 
     fun json():String{
         var jsonText=""
-        val dbHelper = DBHelper(con)
+        val dbHelper = DBHelper(_context)
         val db = dbHelper.readableDatabase
-        val cursor: Cursor = db.query("caltel", null, null, null, null, null, null)
+        val cursor: Cursor = db.query("caltel", null, null, null, null, null, "_id DESC")
         val idTime =cursor.getColumnIndex("time")
         val idPhone =cursor.getColumnIndex("phone")
         val idStatus =cursor.getColumnIndex("status")
@@ -50,6 +42,7 @@ class PhoneStatus(context: Context) {
             } while (cursor.moveToNext())
         }
         cursor.close()
+        db.close()
         dbHelper.close()
         return "["+jsonText.dropLast(1)+"]"
     }
