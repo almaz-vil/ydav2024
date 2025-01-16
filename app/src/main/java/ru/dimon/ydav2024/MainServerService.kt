@@ -63,20 +63,16 @@ class MainServerService : Service() {
                 val socket = socketserver.accept()
                 val output = PrintWriter(socket.getOutputStream(), true)
                 val input = BufferedReader(InputStreamReader(socket.getInputStream()))
-                val input_comand = input.readLine()
-                when(input_comand){
+                when(input.readLine()){
                     "INFO" ->{
                         // об состоянии батареи
                         val battery = Battery(this)
                         //получение информации о сети
                         val myCellInfoLte = MyCellInfoLte(this, this.mainExecutor)
                         myCellInfoLte.run()
-                        //информация о звонках
-                        val phoneStatus = PhoneStatus(this)
                         val inf = """{"time":"${String.format("%tc", GregorianCalendar().timeInMillis)}",
                                    "battery":${battery.json()},
-                                   "signal":${myCellInfoLte.json()},
-                                   "phone":${phoneStatus.json()}}
+                                   "signal":${myCellInfoLte.json()}}
                                                                
                                   """
                         output.println(inf)
@@ -86,6 +82,15 @@ class MainServerService : Service() {
                         val phoneStatus = PhoneStatus(this)
                         val inf = """{"time":"${String.format("%tc", GregorianCalendar().timeInMillis)}",
                                    "phone":${phoneStatus.json()}}
+                                                               
+                                   """
+                        output.println(inf)
+                    }
+                    "CONTACT" ->{
+                        //выборка контактов
+                        val  contacts = Contacts(this)
+                        val inf = """{"time":"${String.format("%tc", GregorianCalendar().timeInMillis)}",
+                                   "contact":${contacts.json()}}
                                                                
                                    """
                         output.println(inf)
