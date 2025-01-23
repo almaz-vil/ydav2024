@@ -28,14 +28,16 @@ class Contacts(context: Context) {
                         null
                     )
                     val id_numer = ContactsContract.CommonDataKinds.Phone.NUMBER
+                    var json_phone = ""
                     if (cursor_t!!.moveToFirst()) {
                         do {
                             val phone = cursor_t.getString(cursor_t.getColumnIndexOrThrow(id_numer))
-                             jsonText+="""{"name":"$name",
-                                      "phone":"$phone"},"""
+                            json_phone+=""""$phone","""
                         } while (cursor_t.moveToNext())
                     }
                     cursor_t.close()
+                    jsonText+="""{"name":"$name", "phone":[${json_phone.dropLast(1)}]},"""
+
                 }
             } while (cursor.moveToNext())
         }

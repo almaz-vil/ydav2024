@@ -10,7 +10,10 @@ import android.icu.util.GregorianCalendar
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import org.json.JSONObject
+import org.json.JSONTokener
 import java.io.BufferedReader
+import java.io.IOException
 import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.net.InetAddress
@@ -57,46 +60,74 @@ class MainServerService : Service() {
         val statusCallBroadcastReceiver = StatusCallBroadcastReceiver()
         registerReceiver(statusCallBroadcastReceiver, IntentFilter("android.intent.action.PHONE_STATE"))
         Thread{
-            val socketserver = ServerSocket(38300, 2, InetAddress.getByName(ipHost))
+            val server = ServerSocket(38300, 2, InetAddress.getByName(ipHost))
+            try{
+                while (true) {
+                    val socket = server.accept()
+                    try {
+                        val output = PrintWriter(socket.getOutputStream(), true)
+                        val input = BufferedReader(InputStreamReader(socket.getInputStream()))
+                        val input_json = input.readLine()
+                        val json = JSONTokener(input_json).nextValue() as JSONObject
+                        val command = json.getString("command")
+                        when (command) {
+                            "INFO" -> {
+                                // об состоянии батареи
+                                val battery = Battery(this)
+                                //получение информации о сети
+                                val myCellInfoLte = MyCellInfoLte(this, this.mainExecutor)
+                                myCellInfoLte.run()
+                                val inf = """{"time":"${
+                                    String.format(
+                                        "%tc",
+                                        GregorianCalendar().timeInMillis
+                                    )
+                                }",
+                                       "battery":${battery.json()},
+                                       "signal":${myCellInfoLte.json()}}
+                                                                   
+                                      """
+                                output.println(inf)
+                            }
 
-            while (true) {
-                val socket = socketserver.accept()
-                val output = PrintWriter(socket.getOutputStream(), true)
-                val input = BufferedReader(InputStreamReader(socket.getInputStream()))
-                when(input.readLine()){
-                    "INFO" ->{
-                        // об состоянии батареи
-                        val battery = Battery(this)
-                        //получение информации о сети
-                        val myCellInfoLte = MyCellInfoLte(this, this.mainExecutor)
-                        myCellInfoLte.run()
-                        val inf = """{"time":"${String.format("%tc", GregorianCalendar().timeInMillis)}",
-                                   "battery":${battery.json()},
-                                   "signal":${myCellInfoLte.json()}}
-                                                               
-                                  """
-                        output.println(inf)
+                            "PHONE" -> {
+                                //информация о звонках
+                                val phoneStatus = PhoneStatus(this)
+                                val inf = """{"time":"${
+                                    String.format(
+                                        "%tc",
+                                        GregorianCalendar().timeInMillis
+                                    )
+                                }",
+                                       "phone":${phoneStatus.json()}}
+                                                                   
+                                       """
+                                output.println(inf)
+                            }
+
+                            "CONTACT" -> {
+                                //выборка контактов
+                                val contacts = Contacts(this)
+                                val inf = """{"time":"${
+                                    String.format(
+                                        "%tc",
+                                        GregorianCalendar().timeInMillis
+                                    )
+                                }",
+                                       "contact":${contacts.json()}}
+                                                                   
+                                       """
+                                output.println(inf)
+                            }
+                        }
+                    } catch (e :IOException){
+                        socket.close()
                     }
-                    "PHONE" ->{
-                        //информация о звонках
-                        val phoneStatus = PhoneStatus(this)
-                        val inf = """{"time":"${String.format("%tc", GregorianCalendar().timeInMillis)}",
-                                   "phone":${phoneStatus.json()}}
-                                                               
-                                   """
-                        output.println(inf)
-                    }
-                    "CONTACT" ->{
-                        //выборка контактов
-                        val  contacts = Contacts(this)
-                        val inf = """{"time":"${String.format("%tc", GregorianCalendar().timeInMillis)}",
-                                   "contact":${contacts.json()}}
-                                                               
-                                   """
-                        output.println(inf)
-                    }
-                }
-           }
+               }
+            } finally {
+                server.close()
+            }
+
         }.start()
         return START_STICKY
     }
