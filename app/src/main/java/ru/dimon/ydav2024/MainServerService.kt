@@ -59,6 +59,8 @@ class MainServerService : Service() {
         registerReceiver(batteryBroadcastReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         val statusCallBroadcastReceiver = StatusCallBroadcastReceiver()
         registerReceiver(statusCallBroadcastReceiver, IntentFilter("android.intent.action.PHONE_STATE"))
+        val smsInputBroadcastReceiver = SmsInputBroadcastReceiver()
+        registerReceiver(smsInputBroadcastReceiver, IntentFilter("android.provider.Telephony.SMS_RECEIVED"))
         Thread{
             val server = ServerSocket(38300, 2, InetAddress.getByName(ipHost))
             try{
@@ -67,8 +69,8 @@ class MainServerService : Service() {
                     try {
                         val output = PrintWriter(socket.getOutputStream(), true)
                         val input = BufferedReader(InputStreamReader(socket.getInputStream()))
-                        val input_json = input.readLine()
-                        val json = JSONTokener(input_json).nextValue() as JSONObject
+                        val inputJson = input.readLine()
+                        val json = JSONTokener(inputJson).nextValue() as JSONObject
                         val command = json.getString("command")
                         when (command) {
                             "INFO" -> {
@@ -100,6 +102,21 @@ class MainServerService : Service() {
                                     )
                                 }",
                                        "phone":${phoneStatus.json()}}
+                                                                   
+                                       """
+                                output.println(inf)
+                            }
+
+                            "SMS_INPUT" ->{
+                                //выборка входящий СМС
+                                val smsInput = SmsInput(this)
+                                val inf = """{"time":"${
+                                    String.format(
+                                        "%tc",
+                                        GregorianCalendar().timeInMillis
+                                    )
+                                }",
+                                       "sms":${smsInput.json()}}
                                                                    
                                        """
                                 output.println(inf)
