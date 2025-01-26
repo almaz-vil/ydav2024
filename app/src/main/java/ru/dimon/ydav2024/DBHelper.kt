@@ -3,9 +3,10 @@ package ru.dimon.ydav2024
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import java.lang.ref.WeakReference
 
 class DBHelper(context: Context):
-    SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION){
+    SQLiteOpenHelper(WeakReference(context).get(), DATABASE_NAME, null, DATABASE_VERSION){
     companion object{
         private const val DATABASE_VERSION = 1
         private const val DATABASE_NAME = "myDB"

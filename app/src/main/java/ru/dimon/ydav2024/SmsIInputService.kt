@@ -4,6 +4,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
+import java.lang.ref.WeakReference
 
 class SmsIInputService: Service() {
 
@@ -16,9 +17,16 @@ class SmsIInputService: Service() {
         val date = intent.extras!!.getLong("date")
         val body = intent.extras!!.getString("body")
         Log.d("Ydav", "onStartCommand: $phone $date $body")
-        val smsInput = SmsInput(this@SmsIInputService)
+        Database.setContext(WeakReference(this@SmsIInputService).get()!!)
+        val smsInput = SmsInput(Database)
         smsInput.write(date, phone!!, body!!)
         stopSelf()
         return START_NOT_STICKY
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Database.closeDatabase()
+    }
+
 }

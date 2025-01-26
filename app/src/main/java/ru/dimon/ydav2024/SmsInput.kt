@@ -3,13 +3,14 @@ package ru.dimon.ydav2024
 import android.content.Context
 import android.database.Cursor
 import android.util.Log
+import java.lang.ref.WeakReference
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-class SmsInput(context: Context):DbWrite {
+class SmsInput(database: Database):DbWrite {
 
-    private val _context=context
+    private val _database=database
 
     fun write(
         date: Long,
@@ -21,13 +22,12 @@ class SmsInput(context: Context):DbWrite {
         val formatTime = time.format(formatter)
         val sql = "INSERT INTO insms(phone, body, time) VALUES ('$phone', '$body', '$formatTime')"
         Log.d("Ydav", "$sql ")
-        exec(_context, sql)
+        exec(_database, sql)
     }
 
     fun json():String{
         var jsonText=""
-        val dbHelper = DBHelper(_context)
-        val db = dbHelper.readableDatabase
+        val db = _database.getDatabase()
         val cursor: Cursor = db.query("insms", null, null, null, null, null, "_id DESC")
         val idId =cursor.getColumnIndex("_id")
         val idTime =cursor.getColumnIndex("time")
@@ -46,8 +46,6 @@ class SmsInput(context: Context):DbWrite {
             } while (cursor.moveToNext())
         }
         cursor.close()
-        db.close()
-        dbHelper.close()
         return "["+jsonText.dropLast(1)+"]"
     }
 

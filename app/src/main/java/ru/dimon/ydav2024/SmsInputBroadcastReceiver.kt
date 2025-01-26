@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
+import java.lang.ref.WeakReference
 
 class SmsInputBroadcastReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -16,7 +17,7 @@ class SmsInputBroadcastReceiver: BroadcastReceiver() {
                 date = message.timestampMillis
                 body += message.messageBody
         }
-        val smsIInputService = Intent(context, SmsIInputService::class.java)
+        val smsIInputService = Intent(WeakReference(context).get(), SmsIInputService::class.java)
         smsIInputService.putExtra("phone", phone)
         smsIInputService.putExtra("date", date)
         smsIInputService.putExtra("body", body)

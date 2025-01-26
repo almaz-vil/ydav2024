@@ -2,15 +2,16 @@ package ru.dimon.ydav2024
 
 import android.content.Context
 import android.database.Cursor
+import java.lang.ref.WeakReference
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 /**
  * Запись и чтение информации о звонке
  */
-class PhoneStatus(context: Context):DbWrite {
+class PhoneStatus(database: Database):DbWrite {
 
-    private val _context=context
+    private val _database=database
 
     fun write(
         phone:String="",
@@ -20,13 +21,13 @@ class PhoneStatus(context: Context):DbWrite {
         val formatter = DateTimeFormatter.ofPattern("HH:mm:ss dd-MM-yyyy")
         val format_time = time.format(formatter)
         val sql = "INSERT INTO caltel(phone, status, time) VALUES ('$phone', '$status', '$format_time')"
-        exec(_context, sql)
+        exec(this._database, sql)
+
     }
 
     fun json():String{
         var jsonText=""
-        val dbHelper = DBHelper(_context)
-        val db = dbHelper.readableDatabase
+        val db = this._database.getDatabase()
         val cursor: Cursor = db.query("caltel", null, null, null, null, null, "_id DESC")
         val idTime =cursor.getColumnIndex("time")
         val idPhone =cursor.getColumnIndex("phone")
@@ -42,8 +43,6 @@ class PhoneStatus(context: Context):DbWrite {
             } while (cursor.moveToNext())
         }
         cursor.close()
-        db.close()
-        dbHelper.close()
         return "["+jsonText.dropLast(1)+"]"
     }
 }

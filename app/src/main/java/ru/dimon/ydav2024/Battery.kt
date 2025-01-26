@@ -2,13 +2,14 @@ package ru.dimon.ydav2024
 
 import android.content.Context
 import android.database.Cursor
+import java.lang.ref.WeakReference
 
 /**
  * Запись и чтение информации о батареи устройства
  */
-class Battery(context: Context):DbWrite {
+class Battery(database: Database):DbWrite {
 
-    private val _context=context
+    private val _database = database
 
     private var status:String = ""
     private var level:Float = Float.NaN
@@ -25,12 +26,11 @@ class Battery(context: Context):DbWrite {
         temperature:Float
     ){
         val sql = "UPDATE batter SET temper=$temperature, lavel=$level, maxlavel=$maxLevel, status='$status' WHERE name='BATTER'"
-        exec(_context, sql)
+        exec(this._database, sql)
     }
 
     private fun read(){
-        val dbHelper = DBHelper(_context)
-        val db = dbHelper.readableDatabase
+        val db = this._database.getDatabase()
         val cursor: Cursor =
             db.query("batter", null, "name = ?", arrayOf("BATTER"), null, null, null)
         val idTemperature = cursor.getColumnIndex("temper")
@@ -46,8 +46,6 @@ class Battery(context: Context):DbWrite {
             } while (cursor.moveToNext())
         }
         cursor.close()
-        db.close()
-        dbHelper.close()
     }
 
     fun json():String{
@@ -56,4 +54,5 @@ class Battery(context: Context):DbWrite {
                 "level":${this.level},
                 "status":"${this.status}"}"""
     }
+
 }

@@ -3,6 +3,7 @@ package ru.dimon.ydav2024
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import java.lang.ref.WeakReference
 
 class StatusCallService : Service() {
 
@@ -10,12 +11,17 @@ class StatusCallService : Service() {
         TODO()
     }
 
-
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         val status = intent.extras!!.getString("Status") as String
-        val phoneStatus = PhoneStatus(this@StatusCallService)
+        Database.setContext(WeakReference(this@StatusCallService).get()!!)
+        val phoneStatus = PhoneStatus(Database)
         phoneStatus.write(status=status)
         stopSelf()
         return START_NOT_STICKY
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Database.closeDatabase()
     }
 }

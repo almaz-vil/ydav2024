@@ -2,15 +2,16 @@ package ru.dimon.ydav2024
 
 import android.content.Context
 import android.provider.ContactsContract
-import android.util.Log
+import java.lang.ref.WeakReference
 
 class Contacts(context: Context) {
 
-    private val _context=context
+    private val _context=WeakReference(context)
 
     fun json():String {
         var jsonText =""
-        val cursor = _context.getContentResolver().query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null)
+        val _con = _context.get()
+        val cursor = _con!!.getContentResolver().query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null)
         val idName = cursor!!.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME)
         val idID = cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
         val idPhone = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)
@@ -20,7 +21,7 @@ class Contacts(context: Context) {
                 val id = cursor.getString(idID)
                 val count_phone = cursor.getInt(idPhone)
                 if (count_phone > 0) {
-                    val cursor_t = _context.getContentResolver().query(
+                    val cursor_t = _con!!.getContentResolver().query(
                         ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                         null,
                         ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",

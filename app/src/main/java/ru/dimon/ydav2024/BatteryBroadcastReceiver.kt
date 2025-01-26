@@ -32,7 +32,7 @@ class BatteryBroadcastReceiver: BroadcastReceiver() {
             BatteryManager.BATTERY_HEALTH_UNKNOWN -> "статус батареи неизвестен"
             else -> "информация недоступна"
         }
-        val servicINFOBattar = Intent( context, BatteryService::class.java)
+        val servicINFOBattar = Intent(context.applicationContext, BatteryService::class.java)
         servicINFOBattar.putExtra("Temper", temperatyr)
         servicINFOBattar.putExtra("Lavel", level)
         servicINFOBattar.putExtra("MaxLavel", maxlevel)

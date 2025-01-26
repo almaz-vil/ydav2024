@@ -8,11 +8,13 @@ import android.telephony.CellInfo
 import android.telephony.CellInfoLte
 import android.telephony.TelephonyManager
 import androidx.core.content.ContextCompat.checkSelfPermission
+import java.lang.ref.WeakReference
 import java.util.concurrent.Executor
 
-class MyCellInfoLte(context: Context, mainExecute: Executor): DbWrite {
-    private val _context=context
-    private val _mainExecute=mainExecute
+class MyCellInfoLte(context: Context, database: Database): DbWrite {
+    private val _database=database
+    private val _context=WeakReference(context).get()!!
+    private val _mainExecute=context.mainExecutor
     private var pRSSI=-1
     private var pRSRP=-1
     private var pRSSNR=-1
@@ -22,14 +24,15 @@ class MyCellInfoLte(context: Context, mainExecute: Executor): DbWrite {
     private var simOperator=""
     private var networkType=""
 
-    fun run() {
-        checkSelfPermission(_context,Manifest.permission.ACCESS_FINE_LOCATION)
+    init {
+        checkSelfPermission(WeakReference(_context).get()!!,Manifest.permission.ACCESS_FINE_LOCATION)
         val telephonyManager = _context.getSystemService(TELEPHONY_SERVICE) as TelephonyManager
         this.simCountyIso = telephonyManager.simCountryIso
         this.simOperatorName = telephonyManager.simOperatorName
         this.simOperator = telephonyManager.simOperator
         this.networkType = networkTypetoString(telephonyManager.dataNetworkType)
-        telephonyManager.requestCellInfoUpdate( _mainExecute, object : TelephonyManager.CellInfoCallback() {
+        val database_local = this._database
+        telephonyManager.requestCellInfoUpdate(WeakReference(_mainExecute).get()!!, object : TelephonyManager.CellInfoCallback() {
             override fun onCellInfo(activeCellInfo: MutableList<CellInfo>) {
                 for (cellInfo in activeCellInfo) {
                     val cellInfoLte  = cellInfo as CellInfoLte
@@ -38,17 +41,14 @@ class MyCellInfoLte(context: Context, mainExecute: Executor): DbWrite {
                     val vRSSNR=cellInfoLte.cellSignalStrength.rssnr
                     val vRSRQ=cellInfoLte.cellSignalStrength.rsrq
                     val sql = "UPDATE infolte SET RSRP=$vRSRP, RSSI=$vRSSI, RSSNR=$vRSSNR, RSRQ=$vRSRQ WHERE name='INFOLTE'"
-                    exec(_context, sql)
+                    exec(database_local, sql)
                 }
             }
-
         })
-
     }
+
     private fun read(){
-        val db: SQLiteDatabase
-        val dbHelper = DBHelper(_context)
-        db = dbHelper.readableDatabase
+        val db = this._database.getDatabase()
         val selection = "name = ?"
         val selectionArgs = arrayOf("INFOLTE")
         val cursor = db.query("infolte", null, selection, selectionArgs, null, null, null)
@@ -65,8 +65,6 @@ class MyCellInfoLte(context: Context, mainExecute: Executor): DbWrite {
             } while(cursor.moveToNext())
         }
         cursor.close()
-        db.close()
-        dbHelper.close()
     }
 
     fun json(): String {

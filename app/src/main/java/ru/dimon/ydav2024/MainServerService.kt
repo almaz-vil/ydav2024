@@ -16,6 +16,7 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import java.io.PrintWriter
+import java.lang.ref.WeakReference
 import java.net.InetAddress
 import java.net.ServerSocket
 
@@ -63,22 +64,30 @@ class MainServerService : Service() {
         registerReceiver(smsInputBroadcastReceiver, IntentFilter("android.provider.Telephony.SMS_RECEIVED"))
         Thread{
             val server = ServerSocket(38300, 2, InetAddress.getByName(ipHost))
+            val ref_connect = WeakReference(this.applicationContext)
+            Database.setContext(ref_connect.get()!!)
+            // об состоянии батареи
+            val battery = Battery(Database)
+            //получение информации о сети
+            val myCellInfoLte = MyCellInfoLte(ref_connect.get()!!,Database)
+            //информация о входящих звонках
+            val phoneStatus = PhoneStatus(Database)
+            //выборка входящий СМС
+            val smsInput = SmsInput(Database)
             try{
                 while (true) {
                     val socket = server.accept()
                     try {
-                        val output = PrintWriter(socket.getOutputStream(), true)
-                        val input = BufferedReader(InputStreamReader(socket.getInputStream()))
+                        val outputStream = socket.getOutputStream()
+                        val output = PrintWriter(outputStream, true)
+                        val inputStream = socket.getInputStream()
+                        val inputStreamReader = InputStreamReader(inputStream)
+                        val input = BufferedReader(inputStreamReader)
                         val inputJson = input.readLine()
                         val json = JSONTokener(inputJson).nextValue() as JSONObject
                         val command = json.getString("command")
                         when (command) {
                             "INFO" -> {
-                                // об состоянии батареи
-                                val battery = Battery(this)
-                                //получение информации о сети
-                                val myCellInfoLte = MyCellInfoLte(this, this.mainExecutor)
-                                myCellInfoLte.run()
                                 val inf = """{"time":"${
                                     String.format(
                                         "%tc",
@@ -90,11 +99,11 @@ class MainServerService : Service() {
                                                                    
                                       """
                                 output.println(inf)
+
                             }
 
                             "PHONE" -> {
                                 //информация о звонках
-                                val phoneStatus = PhoneStatus(this)
                                 val inf = """{"time":"${
                                     String.format(
                                         "%tc",
@@ -109,7 +118,6 @@ class MainServerService : Service() {
 
                             "SMS_INPUT" ->{
                                 //выборка входящий СМС
-                                val smsInput = SmsInput(this)
                                 val inf = """{"time":"${
                                     String.format(
                                         "%tc",
@@ -124,7 +132,7 @@ class MainServerService : Service() {
 
                             "CONTACT" -> {
                                 //выборка контактов
-                                val contacts = Contacts(this)
+                                val contacts = Contacts(ref_connect.get()!!)
                                 val inf = """{"time":"${
                                     String.format(
                                         "%tc",
@@ -137,6 +145,12 @@ class MainServerService : Service() {
                                 output.println(inf)
                             }
                         }
+                        output.close()
+                        outputStream.close()
+                        input.close()
+                        inputStream.close()
+                        inputStreamReader.close()
+
                     } catch (e :IOException){
                         socket.close()
                     }
@@ -169,6 +183,12 @@ class MainServerService : Service() {
             .build()
 
         return notification
+    }
+
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Database.closeDatabase()
     }
 
 }
