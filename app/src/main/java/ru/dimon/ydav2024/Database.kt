@@ -7,16 +7,18 @@ import java.lang.ref.WeakReference
 
 object Database {
     private lateinit var  context: WeakReference<Context>
-    private lateinit var openHeiper: DBHelper
+    private var openHeiper:DBHelper? = null
     fun setContext(context_: Context){
         context=WeakReference(context_)
-        openHeiper=DBHelper(context.get()!!)
+        if (openHeiper==null) {
+            openHeiper = DBHelper(context.get()!!)
+        }
     }
     fun getDatabase(): SQLiteDatabase{
-        return openHeiper.writableDatabase
+        return openHeiper!!.writableDatabase
     }
     fun closeDatabase(){
-        openHeiper.close()
+        openHeiper!!.close()
     }
 
 
