@@ -17,8 +17,4 @@ class PhoneCallScreeningService: CallScreeningService() {
         phoneStatus.write(phone = phoneNomer)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        Database.closeDatabase()
-    }
 }

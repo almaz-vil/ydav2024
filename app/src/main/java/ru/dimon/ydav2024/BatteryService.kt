@@ -24,8 +24,4 @@ class BatteryService : Service() {
         return START_NOT_STICKY
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        Database.closeDatabase()
-    }
 }

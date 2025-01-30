@@ -17,9 +17,6 @@ object Database {
     fun getDatabase(): SQLiteDatabase{
         return openHeiper!!.writableDatabase
     }
-    fun closeDatabase(){
-        openHeiper!!.close()
-    }
 
 
 }

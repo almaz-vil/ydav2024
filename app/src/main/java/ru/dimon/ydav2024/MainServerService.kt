@@ -86,6 +86,7 @@ class MainServerService : Service() {
                         val inputJson = input.readLine()
                         val json = JSONTokener(inputJson).nextValue() as JSONObject
                         val command = json.getString("command")
+                        val param = json.getString("param")
                         when (command) {
                             "INFO" -> {
                                 val inf = """{"time":"${
@@ -95,7 +96,8 @@ class MainServerService : Service() {
                                     )
                                 }",
                                        "battery":${battery.json()},
-                                       "signal":${myCellInfoLte.json()}}
+                                       "signal":${myCellInfoLte.json()},
+                                       "sms":${smsInput.count()}}
                                                                    
                                       """
                                 output.println(inf)
@@ -113,6 +115,21 @@ class MainServerService : Service() {
                                        "phone":${phoneStatus.json()}}
                                                                    
                                        """
+                                output.println(inf)
+                            }
+
+                            "DELETE_SMS_INPUT" -> {
+                                //Удаление входящих СМС
+                                smsInput.delete(param)
+                                val inf = """{"time":"${
+                                    String.format(
+                                        "%tc",
+                                        GregorianCalendar().timeInMillis
+                                    )
+                                }",
+                                       "sms":${smsInput.count()}}
+                                                                   
+                                      """
                                 output.println(inf)
                             }
 
@@ -186,9 +203,5 @@ class MainServerService : Service() {
     }
 
 
-    override fun onDestroy() {
-        super.onDestroy()
-        Database.closeDatabase()
-    }
 
 }
