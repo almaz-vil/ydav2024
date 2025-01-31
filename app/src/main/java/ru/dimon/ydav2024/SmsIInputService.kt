@@ -3,7 +3,6 @@ package ru.dimon.ydav2024
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import android.util.Log
 import java.lang.ref.WeakReference
 
 class SmsIInputService: Service() {
@@ -16,7 +15,6 @@ class SmsIInputService: Service() {
         val phone = intent.extras!!.getString("phone")
         val date = intent.extras!!.getLong("date")
         val body = intent.extras!!.getString("body")
-        Log.d("Ydav", "onStartCommand: $phone $date $body")
         Database.setContext(WeakReference(this@SmsIInputService).get()!!)
         val smsInput = SmsInput(Database)
         smsInput.write(date, phone!!, body!!)

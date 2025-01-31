@@ -1,10 +1,12 @@
 package ru.dimon.ydav2024
 
 import android.database.Cursor
-import android.util.Log
+import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.Date
+import java.util.Locale
 
 class SmsInput(database: Database):DbWrite {
     private val table = "insms"
@@ -12,8 +14,7 @@ class SmsInput(database: Database):DbWrite {
 
     fun delete(where :String){
         val sql = "DELETE FROM $table WHERE $where"
-        Log.d("Ydav", "$sql ")
-    //    exec(_database, sql)
+        exec(_database, sql)
     }
     fun count():Int{
         return count(_database,"SELECT count(*) as count FROM $table")
@@ -24,9 +25,8 @@ class SmsInput(database: Database):DbWrite {
         phone:String="",
         body:String=""
     ){
-        val time= LocalDateTime.ofEpochSecond(date,0, ZoneOffset.ofHours(+3))
-        val formatter = DateTimeFormatter.ofPattern("HH:mm:ss dd-MM-yyyy")
-        val formatTime = time.format(formatter)
+        val sdf = SimpleDateFormat("HH:mm:ss dd-MM-yyyy", Locale.getDefault())
+        val formatTime = sdf.format(Date(date))
         val sql = "INSERT INTO $table(phone, body, time) VALUES ('$phone', '$body', '$formatTime')"
         exec(_database, sql)
     }
