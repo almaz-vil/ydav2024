@@ -10,8 +10,8 @@ class Contacts(context: Context) {
 
     fun json():String {
         var jsonText =""
-        val _con = _context.get()
-        val cursor = _con!!.getContentResolver().query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null)
+        val context = _context.get()
+        val cursor = context!!.contentResolver.query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null)
         val idName = cursor!!.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME)
         val idID = cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
         val idPhone = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)
@@ -19,25 +19,25 @@ class Contacts(context: Context) {
             do {
                 val name = cursor.getString(idName)
                 val id = cursor.getString(idID)
-                val count_phone = cursor.getInt(idPhone)
-                if (count_phone > 0) {
-                    val cursor_t = _con!!.getContentResolver().query(
+                val countPhone = cursor.getInt(idPhone)
+                if (countPhone > 0) {
+                    val cursorT = context.contentResolver.query(
                         ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                         null,
                         ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
                         arrayOf(id),
                         null
                     )
-                    val id_numer = ContactsContract.CommonDataKinds.Phone.NUMBER
-                    var json_phone = ""
-                    if (cursor_t!!.moveToFirst()) {
+                    val idNumber = ContactsContract.CommonDataKinds.Phone.NUMBER
+                    var jsonPhone = ""
+                    if (cursorT!!.moveToFirst()) {
                         do {
-                            val phone = cursor_t.getString(cursor_t.getColumnIndexOrThrow(id_numer))
-                            json_phone+=""""$phone","""
-                        } while (cursor_t.moveToNext())
+                            val phone = cursorT.getString(cursorT.getColumnIndexOrThrow(idNumber))
+                            jsonPhone+=""""$phone","""
+                        } while (cursorT.moveToNext())
                     }
-                    cursor_t.close()
-                    jsonText+="""{"name":"$name", "phone":[${json_phone.dropLast(1)}]},"""
+                    cursorT.close()
+                    jsonText+="""{"name":"$name", "phone":[${jsonPhone.dropLast(1)}]},"""
 
                 }
             } while (cursor.moveToNext())

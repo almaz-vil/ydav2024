@@ -5,6 +5,7 @@ import android.app.Service.TELEPHONY_SERVICE
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.telephony.CellInfo
+import android.telephony.CellInfoGsm
 import android.telephony.CellInfoLte
 import android.telephony.TelephonyManager
 import androidx.core.content.ContextCompat.checkSelfPermission
@@ -35,13 +36,35 @@ class MyCellInfoLte(context: Context, database: Database): DbWrite {
         telephonyManager.requestCellInfoUpdate(WeakReference(_mainExecute).get()!!, object : TelephonyManager.CellInfoCallback() {
             override fun onCellInfo(activeCellInfo: MutableList<CellInfo>) {
                 for (cellInfo in activeCellInfo) {
-                    val cellInfoLte  = cellInfo as CellInfoLte
-                    val vRSRP=cellInfoLte.cellSignalStrength.rsrp
-                    val vRSSI=cellInfoLte.cellSignalStrength.rssi
-                    val vRSSNR=cellInfoLte.cellSignalStrength.rssnr
-                    val vRSRQ=cellInfoLte.cellSignalStrength.rsrq
-                    val sql = "UPDATE infolte SET RSRP=$vRSRP, RSSI=$vRSSI, RSSNR=$vRSSNR, RSRQ=$vRSRQ WHERE name='INFOLTE'"
-                    exec(database_local, sql)
+                    try {
+                        val cellInfoLte = cellInfo as CellInfoLte
+                        val vRSRP = cellInfoLte.cellSignalStrength.rsrp
+                        val vRSSI = cellInfoLte.cellSignalStrength.rssi
+                        val vRSSNR = cellInfoLte.cellSignalStrength.rssnr
+                        val vRSRQ = cellInfoLte.cellSignalStrength.rsrq
+                        val sql =
+                            "UPDATE infolte SET RSRP=$vRSRP, RSSI=$vRSSI, RSSNR=$vRSSNR, RSRQ=$vRSRQ WHERE name='INFOLTE'"
+                        exec(database_local, sql)
+                    } catch (e: ClassCastException) {
+                        try {
+                            val cellInfoGsm = cellInfo as CellInfoGsm
+                            val vRSRP = cellInfoGsm.cellSignalStrength.dbm
+                            val vRSSI = cellInfoGsm.cellSignalStrength.level
+                            val vRSSNR = cellInfoGsm.cellSignalStrength.asuLevel
+                            val vRSRQ = 0
+                            val sql =
+                                "UPDATE infolte SET RSRP=$vRSRP, RSSI=$vRSSI, RSSNR=$vRSSNR, RSRQ=$vRSRQ WHERE name='INFOLTE'"
+                            exec(database_local, sql)
+                        } catch (e: Exception) {
+                            val sql =
+                                "UPDATE infolte SET RSRP=0, RSSI=0, RSSNR=0, RSRQ=0 WHERE name='INFOLTE'"
+                            exec(database_local, sql)
+                        }
+                    } catch (e: Exception) {
+                        val sql =
+                            "UPDATE infolte SET RSRP=0, RSSI=0, RSSNR=0, RSRQ=0 WHERE name='INFOLTE'"
+                        exec(database_local, sql)
+                    }
                 }
             }
         })

@@ -7,6 +7,8 @@ import android.app.Service
 import android.content.Intent
 import android.content.IntentFilter
 import android.icu.util.GregorianCalendar
+import android.net.ConnectivityManager
+import android.net.LinkProperties
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -19,6 +21,7 @@ import java.io.PrintWriter
 import java.lang.ref.WeakReference
 import java.net.InetAddress
 import java.net.ServerSocket
+import java.net.Socket
 
 
 class MainServerService : Service() {
@@ -50,136 +53,182 @@ class MainServerService : Service() {
         throw UnsupportedOperationException("Not yet implemented")
     }
 
+    /**
+     * IP адрес устройства
+     */
+    private fun getDeviceIpAddress(connectivityManager:ConnectivityManager):String? {
+        val linkProperties: LinkProperties? = connectivityManager.getLinkProperties(connectivityManager.activeNetwork)
+        if (linkProperties!=null) {
+            return linkProperties.linkAddresses[1].address.hostAddress!!
+        }
+        return null
+    }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val ipHost = intent?.getStringExtra("Host")
-        Log.i("ydav", "service start $ipHost")
+        val ipHostForNotification = intent?.getStringExtra("Host")
+        Log.i("Ydav", "service start $ipHostForNotification")
 
 
-        startForeground(NOTIFICATION_ID, newOngoingNotification(ipHost))
+        startForeground(NOTIFICATION_ID, newOngoingNotification(ipHostForNotification))
         val batteryBroadcastReceiver = BatteryBroadcastReceiver()
         registerReceiver(batteryBroadcastReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         val statusCallBroadcastReceiver = StatusCallBroadcastReceiver()
         registerReceiver(statusCallBroadcastReceiver, IntentFilter("android.intent.action.PHONE_STATE"))
         val smsInputBroadcastReceiver = SmsInputBroadcastReceiver()
         registerReceiver(smsInputBroadcastReceiver, IntentFilter("android.provider.Telephony.SMS_RECEIVED"))
+        val connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
         Thread{
-            val server = ServerSocket(38300, 2, InetAddress.getByName(ipHost))
-            val ref_connect = WeakReference(this.applicationContext)
-            Database.setContext(ref_connect.get()!!)
+            val refConnect = WeakReference(this.applicationContext)
+            Database.setContext(refConnect.get()!!)
             // об состоянии батареи
             val battery = Battery(Database)
             //получение информации о сети
-            val myCellInfoLte = MyCellInfoLte(ref_connect.get()!!,Database)
+            val myCellInfoLte = MyCellInfoLte(refConnect.get()!!,Database)
             //информация о входящих звонках
             val phoneStatus = PhoneStatus(Database)
             //выборка входящий СМС
             val smsInput = SmsInput(Database)
-            try{
-                while (true) {
-                    val socket = server.accept()
-                    try {
-                        val outputStream = socket.getOutputStream()
-                        val output = PrintWriter(outputStream, true)
-                        val inputStream = socket.getInputStream()
-                        val inputStreamReader = InputStreamReader(inputStream)
-                        val input = BufferedReader(inputStreamReader)
-                        val inputJson = input.readLine()
-                        val json = JSONTokener(inputJson).nextValue() as JSONObject
-                        val command = json.getString("command")
-                        val param = json.getString("param")
-                        when (command) {
-                            "INFO" -> {
-                                val inf = """{"time":"${
-                                    String.format(
-                                        "%tc",
-                                        GregorianCalendar().timeInMillis
-                                    )
-                                }",
+            while (true){
+                //Проверка наличия подключения
+                var ipHost=""
+                do{
+                    val ipHos=getDeviceIpAddress(connectivityManager)
+                    if (ipHos != null) {
+                        ipHost = ipHos
+                    }
+                }while ( ipHos == null)
+                var server: ServerSocket?
+                try {
+                    server = ServerSocket(38300, 2, InetAddress.getByName(ipHost))
+                } catch (e: Exception){
+                    server = null
+                    sendIntentActivity("")
+                }
+                server?.use {
+                    do {
+                        var connectWifi = true
+                        var socket: Socket?
+                        try {
+                            //Отправить IP адрес в Activity
+                           sendIntentActivity(ipHost)
+                            //Ожидание клиента к серверу
+                            socket = server.accept()
+                        } catch (e: Exception) {
+                            //Отправить IP адрес в Activity
+                            sendIntentActivity("")
+                            socket = null
+                            connectWifi = false
+                        }
+                        if (socket != null) {
+                            try {
+                                val outputStream = socket.getOutputStream()
+                                val output = PrintWriter(outputStream, true)
+                                val inputStream = socket.getInputStream()
+                                val inputStreamReader = InputStreamReader(inputStream)
+                                val input = BufferedReader(inputStreamReader)
+                                val inputJson = input.readLine()
+                                val json = JSONTokener(inputJson).nextValue() as JSONObject
+                                val command = json.getString("command")
+                                val param = json.getString("param")
+                                when (command) {
+                                    "INFO" -> {
+                                        val inf = """{"time":"${
+                                            String.format(
+                                                "%tc",
+                                                GregorianCalendar().timeInMillis
+                                            )
+                                        }",
                                        "battery":${battery.json()},
                                        "signal":${myCellInfoLte.json()},
                                        "sms":${smsInput.count()}}
                                                                    
                                       """
-                                output.println(inf)
+                                        output.println(inf)
 
-                            }
+                                    }
 
-                            "PHONE" -> {
-                                //информация о звонках
-                                val inf = """{"time":"${
-                                    String.format(
-                                        "%tc",
-                                        GregorianCalendar().timeInMillis
-                                    )
-                                }",
+                                    "PHONE" -> {
+                                        //информация о звонках
+                                        val inf = """{"time":"${
+                                            String.format(
+                                                "%tc",
+                                                GregorianCalendar().timeInMillis
+                                            )
+                                        }",
                                        "phone":${phoneStatus.json()}}
                                                                    
                                        """
-                                output.println(inf)
-                            }
+                                        output.println(inf)
+                                    }
 
-                            "DELETE_SMS_INPUT" -> {
-                                //Удаление входящих СМС
-                                smsInput.delete(param)
-                                val inf = """{"time":"${
-                                    String.format(
-                                        "%tc",
-                                        GregorianCalendar().timeInMillis
-                                    )
-                                }",
+                                    "DELETE_SMS_INPUT" -> {
+                                        //Удаление входящих СМС
+                                        smsInput.delete(param)
+                                        val inf = """{"time":"${
+                                            String.format(
+                                                "%tc",
+                                                GregorianCalendar().timeInMillis
+                                            )
+                                        }",
                                        "sms":${smsInput.count()}}
                                                                    
                                       """
-                                output.println(inf)
-                            }
+                                        output.println(inf)
+                                    }
 
-                            "SMS_INPUT" ->{
-                                //выборка входящий СМС
-                                val inf = """{"time":"${
-                                    String.format(
-                                        "%tc",
-                                        GregorianCalendar().timeInMillis
-                                    )
-                                }",
+                                    "SMS_INPUT" -> {
+                                        //выборка входящий СМС
+                                        val inf = """{"time":"${
+                                            String.format(
+                                                "%tc",
+                                                GregorianCalendar().timeInMillis
+                                            )
+                                        }",
                                        "sms":${smsInput.json()}}
                                                                    
                                        """
-                                output.println(inf)
-                            }
+                                        output.println(inf)
+                                    }
 
-                            "CONTACT" -> {
-                                //выборка контактов
-                                val contacts = Contacts(ref_connect.get()!!)
-                                val inf = """{"time":"${
-                                    String.format(
-                                        "%tc",
-                                        GregorianCalendar().timeInMillis
-                                    )
-                                }",
+                                    "CONTACT" -> {
+                                        //выборка контактов
+                                        val contacts = Contacts(refConnect.get()!!)
+                                        val inf = """{"time":"${
+                                            String.format(
+                                                "%tc",
+                                                GregorianCalendar().timeInMillis
+                                            )
+                                        }",
                                        "contact":${contacts.json()}}
                                                                    
                                        """
-                                output.println(inf)
+                                        output.println(inf)
+                                    }
+                                }
+                                output.close()
+                                outputStream.close()
+                                input.close()
+                                inputStream.close()
+                                inputStreamReader.close()
+
+                            } catch (e: IOException) {
+                                socket.close()
                             }
                         }
-                        output.close()
-                        outputStream.close()
-                        input.close()
-                        inputStream.close()
-                        inputStreamReader.close()
+                    } while (connectWifi)
+                }
 
-                    } catch (e :IOException){
-                        socket.close()
-                    }
-               }
-            } finally {
-                server.close()
             }
-
         }.start()
         return START_STICKY
     }
 
+    private fun sendIntentActivity(s: String){
+        //Отправить IP адрес в Activity
+        val intent = Intent(this, MainActivity::class.java)
+            .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
+            .putExtra("IPAddress", s)
+        startActivity(intent)
+    }
     /*
     * Сообщение в баре системе
     * */

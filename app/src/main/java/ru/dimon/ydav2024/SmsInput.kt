@@ -1,6 +1,7 @@
 package ru.dimon.ydav2024
 
 import android.database.Cursor
+import android.util.Log
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -13,8 +14,9 @@ class SmsInput(database: Database):DbWrite {
     private val _database=database
 
     fun delete(where :String){
-        val sql = "DELETE FROM $table WHERE $where"
-        exec(_database, sql)
+        if (where.length>0) {
+            exec(_database, "DELETE FROM $table WHERE $where")
+        }
     }
     fun count():Int{
         return count(_database,"SELECT count(*) as count FROM $table")

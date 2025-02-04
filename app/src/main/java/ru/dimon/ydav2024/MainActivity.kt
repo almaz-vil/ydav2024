@@ -1,84 +1,91 @@
 package ru.dimon.ydav2024
 
 import android.content.Intent
-import android.net.ConnectivityManager
-import android.net.LinkProperties
+import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import ru.dimon.ydav2024.ui.theme.Ydav2024Theme
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import java.lang.ref.WeakReference
 
 
 class MainActivity : ComponentActivity() {
-    /**
-     * IP адрес устройства
-      */
-    private fun getDeviceIpAddress(connectivityManager:ConnectivityManager):String? {
-         val linkProperties:LinkProperties? = connectivityManager.getLinkProperties(connectivityManager.activeNetwork)
-        if (linkProperties!=null) {
-            return linkProperties.linkAddresses[1].address.hostAddress!!
-        }
-        return null
-    }
-    override fun onCreate(savedInstanceState: Bundle?) {
+
+   private fun startServiceMain(){
+           val intent = Intent(
+               WeakReference(this.applicationContext).get(),
+               MainServerService::class.java
+           )
+           if (!MainServerService.isServiceCreated()) {
+               startForegroundService(intent)
+           } else {
+               stopService(intent)
+           }
+   }
+
+   override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-    /*    val  roleManager = getSystemService(ROLE_SERVICE) as RoleManager
-        val isHeld = roleManager.isRoleHeld(RoleManager.ROLE_CALL_SCREENING)
-        if (!isHeld) {
-            val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
-            startActivity(intent);
-        }
-  */
-        val connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
-        var ipAdressHost = getDeviceIpAddress(connectivityManager)
-        if (ipAdressHost != null) {
-            val intent = Intent(WeakReference(getApplicationContext()).get(), MainServerService::class.java)
-            intent.putExtra("Host", ipAdressHost)
-            if (!MainServerService.isServiceCreated()) {
-                Log.d("ydav", "start ip = $ipAdressHost")
-                startForegroundService(intent)
-            } else {
-                stopService(intent)
+        val hostIp = intent?.extras?.getString("IPAddress")
+        val arrayPermissionString = mutableMapOf(
+            "android.permission.ANSWER_PHONE_CALLS" to " \"Список вызовов\"",
+            "android.permission.ACCESS_COARSE_LOCATION" to " \"Местоположение\"",
+            "android.permission.RECEIVE_SMS" to " \"СМС\"",
+            "android.permission.READ_CONTACTS" to " \"Контакты\"",
+            "android.permission.READ_PHONE_STATE" to " \"Телефон\"")
+        val arrayPermission = mutableMapOf(
+            "android.permission.ANSWER_PHONE_CALLS" to true,
+            "android.permission.ACCESS_COARSE_LOCATION" to true,
+            "android.permission.RECEIVE_SMS" to true,
+            "android.permission.READ_CONTACTS" to true,
+            "android.permission.READ_PHONE_STATE" to true)
+        for (permission in arrayPermission){
+            val permissionStatus = ContextCompat.checkSelfPermission(this,permission.key)
+            if (permissionStatus == PackageManager.PERMISSION_DENIED){
+                permission.setValue(false)
             }
-        } else {
-            ipAdressHost="Ошибка. IP адрес устройства не найдено"
         }
-        enableEdgeToEdge()
-        setContent {
-            Ydav2024Theme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = ipAdressHost,
-                        modifier = Modifier.padding(innerPadding)
+        val permissionFalse = arrayPermission.filter { !it.value }
+        if (permissionFalse.isEmpty()) {
+            if (hostIp==null) {
+                startServiceMain()
+            }
+            setContent {
+                Column(modifier=Modifier.padding(horizontal = 5.dp, vertical = 20.dp)){
+                    Text(
+                     when (hostIp){
+                        null , "" ->"Внимание, сервер остановлен! Ожидается включение WI-FI. Активны разрешения: "
+                        else -> "Внимание, сервер $hostIp работает! Активны разрешения: "
+                        }
                     )
+                    for (permission in arrayPermission){
+                        Row(modifier=Modifier.padding(horizontal = 10.dp)) {
+                            Text(arrayPermissionString.getValue(permission.key), fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
+        } else {
+            val appName = getString(R.string.app_name)
+            setContent {
+                Column(modifier=Modifier.padding(horizontal = 5.dp)){
+                    Text("Внимание, дальнейшая работа программы $appName невозможна, пока")
+                    for (permission in permissionFalse){
+                        Row(modifier=Modifier.padding(horizontal = 10.dp)) {                            Text("у Вас нет разрешения:")
+                            Text(arrayPermissionString.getValue(permission.key), fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    Text("Для устранения проблемы дайте в настройках $appName выше перечисленные разрешения.")
+                    Text("Перезапустите $appName.")
+                }
+            }
+
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Состояние сервера. $name",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Ydav2024Theme {
-        Greeting("Android")
     }
 }
