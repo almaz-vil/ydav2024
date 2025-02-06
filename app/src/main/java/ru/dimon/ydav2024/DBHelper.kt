@@ -21,6 +21,8 @@ class DBHelper(context: Context):
         sQLiteDatabase?.execSQL("insert into batter (name, temper, lavel, maxlavel, status) values ('BATTER','-1','-1','-1','-1')")
         sQLiteDatabase?.execSQL("create table infolte (_id integer primary key autoincrement, name string, RSSI integer, RSRP integer, RSSNR integer, RSRQ integer);")
         sQLiteDatabase?.execSQL("insert into infolte (name, RSSI, RSRP, RSSNR, RSRQ) values ('INFOLTE',0,0,0,0)")
+        sQLiteDatabase?.execSQL("create table address (_id integer primary key autoincrement, name string, ip string);")
+        sQLiteDatabase?.execSQL("insert into address (name, ip) values ('server','')")
     }
 
     override

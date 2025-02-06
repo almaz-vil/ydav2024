@@ -1,12 +1,10 @@
 package ru.dimon.ydav2024
 
 import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.IntentFilter
-import android.icu.util.GregorianCalendar
 import android.net.ConnectivityManager
 import android.net.LinkProperties
 import android.os.IBinder
@@ -22,6 +20,8 @@ import java.lang.ref.WeakReference
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 
 class MainServerService : Service() {
@@ -99,6 +99,9 @@ class MainServerService : Service() {
                 var server: ServerSocket?
                 try {
                     server = ServerSocket(38300, 2, InetAddress.getByName(ipHost))
+                    //Отправить IP адрес в Activity
+                    startForeground(NOTIFICATION_ID, newOngoingNotification("IP адрес сервера: $ipHost"))
+                    sendIntentActivity(ipHost)
                 } catch (e: Exception){
                     server = null
                     sendIntentActivity("")
@@ -108,12 +111,11 @@ class MainServerService : Service() {
                         var connectWifi = true
                         var socket: Socket?
                         try {
-                            //Отправить IP адрес в Activity
-                           sendIntentActivity(ipHost)
                             //Ожидание клиента к серверу
                             socket = server.accept()
                         } catch (e: Exception) {
                             //Отправить IP адрес в Activity
+                            startForeground(NOTIFICATION_ID, newOngoingNotification("Сервер остановлен! Нет WiFi"))
                             sendIntentActivity("")
                             socket = null
                             connectWifi = false
@@ -129,14 +131,12 @@ class MainServerService : Service() {
                                 val json = JSONTokener(inputJson).nextValue() as JSONObject
                                 val command = json.getString("command")
                                 val param = json.getString("param")
+                                val time = LocalDateTime.now()
+                                val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy EEEE HH:mm:ss ")
+                                val timeSend =  time.format(formatter)
                                 when (command) {
                                     "INFO" -> {
-                                        val inf = """{"time":"${
-                                            String.format(
-                                                "%tc",
-                                                GregorianCalendar().timeInMillis
-                                            )
-                                        }",
+                                        val inf = """{"time":"$timeSend",
                                        "battery":${battery.json()},
                                        "signal":${myCellInfoLte.json()},
                                        "sms":${smsInput.count()}}
@@ -148,12 +148,7 @@ class MainServerService : Service() {
 
                                     "PHONE" -> {
                                         //информация о звонках
-                                        val inf = """{"time":"${
-                                            String.format(
-                                                "%tc",
-                                                GregorianCalendar().timeInMillis
-                                            )
-                                        }",
+                                        val inf = """{"time":"$timeSend",
                                        "phone":${phoneStatus.json()}}
                                                                    
                                        """
@@ -163,12 +158,7 @@ class MainServerService : Service() {
                                     "DELETE_SMS_INPUT" -> {
                                         //Удаление входящих СМС
                                         smsInput.delete(param)
-                                        val inf = """{"time":"${
-                                            String.format(
-                                                "%tc",
-                                                GregorianCalendar().timeInMillis
-                                            )
-                                        }",
+                                        val inf = """{"time":"$timeSend",
                                        "sms":${smsInput.count()}}
                                                                    
                                       """
@@ -177,12 +167,7 @@ class MainServerService : Service() {
 
                                     "SMS_INPUT" -> {
                                         //выборка входящий СМС
-                                        val inf = """{"time":"${
-                                            String.format(
-                                                "%tc",
-                                                GregorianCalendar().timeInMillis
-                                            )
-                                        }",
+                                        val inf = """{"time":"$timeSend",
                                        "sms":${smsInput.json()}}
                                                                    
                                        """
@@ -192,12 +177,7 @@ class MainServerService : Service() {
                                     "CONTACT" -> {
                                         //выборка контактов
                                         val contacts = Contacts(refConnect.get()!!)
-                                        val inf = """{"time":"${
-                                            String.format(
-                                                "%tc",
-                                                GregorianCalendar().timeInMillis
-                                            )
-                                        }",
+                                        val inf = """{"time":"$timeSend",
                                        "contact":${contacts.json()}}
                                                                    
                                        """
@@ -224,26 +204,22 @@ class MainServerService : Service() {
 
     private fun sendIntentActivity(s: String){
         //Отправить IP адрес в Activity
-        val intent = Intent(this, MainActivity::class.java)
-            .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
-            .putExtra("IPAddress", s)
-        startActivity(intent)
+        Database.setContext(WeakReference( this@MainServerService.applicationContext).get()!!)
+        val addressIp = AddressIp(Database)
+        addressIp.setAddressIp(s)
     }
+    
     /*
     * Сообщение в баре системе
     * */
-    private fun newOngoingNotification(ip: String?): Notification{
-        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        val chan = NotificationChannel(
-            "1986",
-            "channelYdav", NotificationManager.IMPORTANCE_NONE
-        )
-        chan.description = "for run service Ydav"
-        manager.createNotificationChannel(chan)
-        val notificationBuilder = NotificationCompat.Builder(this, "1986")
+    private fun newOngoingNotification(message: String?): Notification{
+        val channelId = getString(R.string.channel_id)
+        val context = WeakReference( this@MainServerService.applicationContext).get()!!
+        val notificationBuilder = NotificationCompat.Builder(context, channelId)
         val notification = notificationBuilder.setOngoing(true)
+            .setSmallIcon(R.drawable.ic_stat_name)
             .setContentTitle("Ydav")
-            .setContentText("Работает сервер ip:$ip")
+            .setContentText(message)
             .setPriority(NotificationManager.IMPORTANCE_MIN)
             .setCategory(Notification.CATEGORY_SERVICE)
             .build()

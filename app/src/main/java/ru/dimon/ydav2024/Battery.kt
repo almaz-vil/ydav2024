@@ -1,8 +1,6 @@
 package ru.dimon.ydav2024
 
-import android.content.Context
 import android.database.Cursor
-import java.lang.ref.WeakReference
 
 /**
  * Запись и чтение информации о батареи устройства
@@ -46,6 +44,7 @@ class Battery(database: Database):DbWrite {
             } while (cursor.moveToNext())
         }
         cursor.close()
+
     }
 
     fun json():String{

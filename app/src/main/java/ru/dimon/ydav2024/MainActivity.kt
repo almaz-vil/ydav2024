@@ -30,9 +30,18 @@ class MainActivity : ComponentActivity() {
            }
    }
 
+   private fun getHost():String?{
+       if (MainServerService.isServiceCreated()){
+           Database.setContext(WeakReference(this.applicationContext).get()!!)
+           val addressIp  = AddressIp(Database)
+           return addressIp.getAddressIp()
+       }
+       return null
+   }
+
    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val hostIp = intent?.extras?.getString("IPAddress")
+        var hostIp = getHost()
         val arrayPermissionString = mutableMapOf(
             "android.permission.ANSWER_PHONE_CALLS" to " \"Список вызовов\"",
             "android.permission.ACCESS_COARSE_LOCATION" to " \"Местоположение\"",
@@ -55,6 +64,7 @@ class MainActivity : ComponentActivity() {
         if (permissionFalse.isEmpty()) {
             if (hostIp==null) {
                 startServiceMain()
+                hostIp = getHost()
             }
             setContent {
                 Column(modifier=Modifier.padding(horizontal = 5.dp, vertical = 20.dp)){
