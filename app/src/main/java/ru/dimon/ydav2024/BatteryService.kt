@@ -13,13 +13,16 @@ class BatteryService : Service() {
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        val temperature = intent.extras!!.getFloat("Temper")
-        val lavel = intent.extras!!.getFloat("Lavel")
-        val maxlavel = intent.extras!!.getFloat("MaxLavel")
+        val temperature = intent.extras!!.getFloat("Temperature")
+        val level = intent.extras!!.getFloat("Level")
         val status = intent.extras!!.getString("Status")
+        val charge = intent.extras!!.getString("Charge")
         Database.setContext(WeakReference( this@BatteryService.applicationContext).get()!!)
         val battery = Battery(Database)
-        battery.write(status!!, lavel, maxlavel, temperature)
+        battery.write(status=status!!,
+            level=level,
+            temperature=temperature,
+            charge=charge!!)
         stopSelf()
         return START_NOT_STICKY
     }

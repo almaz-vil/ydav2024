@@ -1,7 +1,10 @@
 package ru.dimon.ydav2024
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.LinkProperties
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,6 +20,17 @@ import java.lang.ref.WeakReference
 
 
 class MainActivity : ComponentActivity() {
+    /**
+     * IP адрес устройства
+     */
+    private fun getDeviceIpAddress(context: Context?):String? {
+        val connectivityManager = context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val linkProperties: LinkProperties? = connectivityManager.getLinkProperties(connectivityManager.activeNetwork)
+        if (linkProperties!=null) {
+            return linkProperties.linkAddresses[1].address.hostAddress!!
+        }
+        return null
+    }
 
    private fun startServiceMain(){
            val intent = Intent(
@@ -24,24 +38,24 @@ class MainActivity : ComponentActivity() {
                MainServerService::class.java
            )
            if (!MainServerService.isServiceCreated()) {
+
+               val ipHost = getDeviceIpAddress(WeakReference(this).get())
+               val mainServerService =Intent(WeakReference(this).get(), MainServerService::class.java)
+               mainServerService.putExtra("Host", ipHost)
+               ContextCompat.startForegroundService(
+                   WeakReference(this).get()!!,
+                   mainServerService
+               )
                startForegroundService(intent)
            } else {
                stopService(intent)
            }
    }
 
-   private fun getHost():String?{
-       if (MainServerService.isServiceCreated()){
-           Database.setContext(WeakReference(this.applicationContext).get()!!)
-           val addressIp  = AddressIp(Database)
-           return addressIp.getAddressIp()
-       }
-       return null
-   }
 
    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        var hostIp = getHost()
+        var hostIp = getDeviceIpAddress(WeakReference(this).get())
         val arrayPermissionString = mutableMapOf(
             "android.permission.ANSWER_PHONE_CALLS" to " \"Список вызовов\"",
             "android.permission.ACCESS_COARSE_LOCATION" to " \"Местоположение\"",
@@ -64,7 +78,7 @@ class MainActivity : ComponentActivity() {
         if (permissionFalse.isEmpty()) {
             if (hostIp==null) {
                 startServiceMain()
-                hostIp = getHost()
+                hostIp = getDeviceIpAddress(WeakReference(this).get())
             }
             setContent {
                 Column(modifier=Modifier.padding(horizontal = 5.dp, vertical = 20.dp)){

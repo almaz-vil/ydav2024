@@ -3,14 +3,12 @@ package ru.dimon.ydav2024
 import android.Manifest
 import android.app.Service.TELEPHONY_SERVICE
 import android.content.Context
-import android.database.sqlite.SQLiteDatabase
 import android.telephony.CellInfo
 import android.telephony.CellInfoGsm
 import android.telephony.CellInfoLte
 import android.telephony.TelephonyManager
 import androidx.core.content.ContextCompat.checkSelfPermission
 import java.lang.ref.WeakReference
-import java.util.concurrent.Executor
 
 class MyCellInfoLte(context: Context, database: Database): DbWrite {
     private val _database=database
@@ -32,7 +30,7 @@ class MyCellInfoLte(context: Context, database: Database): DbWrite {
         this.simOperatorName = telephonyManager.simOperatorName
         this.simOperator = telephonyManager.simOperator
         this.networkType = networkTypetoString(telephonyManager.dataNetworkType)
-        val database_local = this._database
+        val databaseLocal = this._database
         telephonyManager.requestCellInfoUpdate(WeakReference(_mainExecute).get()!!, object : TelephonyManager.CellInfoCallback() {
             override fun onCellInfo(activeCellInfo: MutableList<CellInfo>) {
                 for (cellInfo in activeCellInfo) {
@@ -44,7 +42,7 @@ class MyCellInfoLte(context: Context, database: Database): DbWrite {
                         val vRSRQ = cellInfoLte.cellSignalStrength.rsrq
                         val sql =
                             "UPDATE infolte SET RSRP=$vRSRP, RSSI=$vRSSI, RSSNR=$vRSSNR, RSRQ=$vRSRQ WHERE name='INFOLTE'"
-                        exec(database_local, sql)
+                        exec(databaseLocal, sql)
                     } catch (e: ClassCastException) {
                         try {
                             val cellInfoGsm = cellInfo as CellInfoGsm
@@ -54,16 +52,16 @@ class MyCellInfoLte(context: Context, database: Database): DbWrite {
                             val vRSRQ = 0
                             val sql =
                                 "UPDATE infolte SET RSRP=$vRSRP, RSSI=$vRSSI, RSSNR=$vRSSNR, RSRQ=$vRSRQ WHERE name='INFOLTE'"
-                            exec(database_local, sql)
+                            exec(databaseLocal, sql)
                         } catch (e: Exception) {
                             val sql =
                                 "UPDATE infolte SET RSRP=0, RSSI=0, RSSNR=0, RSRQ=0 WHERE name='INFOLTE'"
-                            exec(database_local, sql)
+                            exec(databaseLocal, sql)
                         }
                     } catch (e: Exception) {
                         val sql =
                             "UPDATE infolte SET RSRP=0, RSSI=0, RSSNR=0, RSRQ=0 WHERE name='INFOLTE'"
-                        exec(database_local, sql)
+                        exec(databaseLocal, sql)
                     }
                 }
             }

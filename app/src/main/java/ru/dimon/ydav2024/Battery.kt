@@ -11,8 +11,8 @@ class Battery(database: Database):DbWrite {
 
     private var status:String = ""
     private var level:Float = Float.NaN
-    private var max_level:Float = Float.NaN
     private var temperature:Float = Float.NaN
+    private var charge:String = ""
 
     /**
      * Запись данных в базу данных
@@ -20,27 +20,27 @@ class Battery(database: Database):DbWrite {
     fun write(
         status:String,
         level:Float,
-        maxLevel:Float,
-        temperature:Float
+        temperature:Float,
+        charge:String
     ){
-        val sql = "UPDATE batter SET temper=$temperature, lavel=$level, maxlavel=$maxLevel, status='$status' WHERE name='BATTER'"
+        val sql = "UPDATE battery SET temperature=$temperature, level=$level, status='$status', charge='$charge' WHERE name='BATTERY'"
         exec(this._database, sql)
     }
 
     private fun read(){
         val db = this._database.getDatabase()
         val cursor: Cursor =
-            db.query("batter", null, "name = ?", arrayOf("BATTER"), null, null, null)
-        val idTemperature = cursor.getColumnIndex("temper")
-        val idLevel = cursor.getColumnIndex("lavel")
-        val idMaxLevel = cursor.getColumnIndex("maxlavel")
+            db.query("battery", null, "name = ?", arrayOf("BATTERY"), null, null, null)
+        val idTemperature = cursor.getColumnIndex("temperature")
+        val idLevel = cursor.getColumnIndex("level")
         val idStatus = cursor.getColumnIndex("status")
+        val idCharge = cursor.getColumnIndex("charge")
         if (cursor.moveToFirst()) {
             do {
                 this.temperature = cursor.getFloat(idTemperature)
                 this.level = cursor.getFloat(idLevel)
-                this.max_level = cursor.getFloat(idMaxLevel)
                 this.status = cursor.getString(idStatus)
+                this.charge = cursor.getString(idCharge)
             } while (cursor.moveToNext())
         }
         cursor.close()
@@ -51,7 +51,8 @@ class Battery(database: Database):DbWrite {
         this.read()
         return """{"temperature":${this.temperature},
                 "level":${this.level},
-                "status":"${this.status}"}"""
+                "status":"${this.status}",
+                "charge":"${this.charge}"}"""
     }
 
 }

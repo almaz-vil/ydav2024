@@ -11,10 +11,10 @@ import java.lang.ref.WeakReference
 class PhoneCallScreeningService: CallScreeningService() {
 
     override fun onScreenCall(details: Details) {
-        val  phoneNomer = details.handle.schemeSpecificPart as String
+        val  phone = details.handle.schemeSpecificPart as String
         Database.setContext(WeakReference(this@PhoneCallScreeningService).get()!!)
         val phoneStatus = PhoneStatus(Database)
-        phoneStatus.write(phone = phoneNomer)
+        phoneStatus.write(phone = phone)
     }
 
 }

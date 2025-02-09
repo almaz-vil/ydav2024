@@ -5,10 +5,7 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.IntentFilter
-import android.net.ConnectivityManager
-import android.net.LinkProperties
 import android.os.IBinder
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -28,19 +25,24 @@ class MainServerService : Service() {
     companion object {
         const val NOTIFICATION_ID=122
         private var mInstance: MainServerService? = null
+
         fun isServiceCreated():Boolean {
             try {
-                // If instance was not cleared but the service was destroyed an Exception will be thrown
                 var u=mInstance?.ping()
-                if (u==null){ u=false}
+                if (u==null){
+                    u=false
+                }
                 return mInstance != null && u
             } catch (e:NullPointerException) {
-                // destroyed/not-started
                 return false
             }
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        mInstance=null
+    }
     fun ping():Boolean{
         return true
     }
@@ -53,32 +55,13 @@ class MainServerService : Service() {
         throw UnsupportedOperationException("Not yet implemented")
     }
 
-    /**
-     * IP адрес устройства
-     */
-    private fun getDeviceIpAddress(connectivityManager:ConnectivityManager):String? {
-        val linkProperties: LinkProperties? = connectivityManager.getLinkProperties(connectivityManager.activeNetwork)
-        if (linkProperties!=null) {
-            return linkProperties.linkAddresses[1].address.hostAddress!!
-        }
-        return null
-    }
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val ipHostForNotification = intent?.getStringExtra("Host")
-        Log.i("Ydav", "service start $ipHostForNotification")
-
-
-        startForeground(NOTIFICATION_ID, newOngoingNotification(ipHostForNotification))
-        val batteryBroadcastReceiver = BatteryBroadcastReceiver()
-        registerReceiver(batteryBroadcastReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        val statusCallBroadcastReceiver = StatusCallBroadcastReceiver()
-        registerReceiver(statusCallBroadcastReceiver, IntentFilter("android.intent.action.PHONE_STATE"))
-        val smsInputBroadcastReceiver = SmsInputBroadcastReceiver()
-        registerReceiver(smsInputBroadcastReceiver, IntentFilter("android.provider.Telephony.SMS_RECEIVED"))
-        val connectivityManager = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+        val ipHost = intent?.getStringExtra("Host")
+        startForeground(NOTIFICATION_ID, newOngoingNotification(ipHost))
         Thread{
             val refConnect = WeakReference(this.applicationContext)
             Database.setContext(refConnect.get()!!)
+            val batteryBroadcastReceiver = BatteryBroadcastReceiver()
             // об состоянии батареи
             val battery = Battery(Database)
             //получение информации о сети
@@ -87,28 +70,22 @@ class MainServerService : Service() {
             val phoneStatus = PhoneStatus(Database)
             //выборка входящий СМС
             val smsInput = SmsInput(Database)
-            while (true){
-                //Проверка наличия подключения
-                var ipHost=""
-                do{
-                    val ipHos=getDeviceIpAddress(connectivityManager)
-                    if (ipHos != null) {
-                        ipHost = ipHos
-                    }
-                }while ( ipHos == null)
+
+            var connectWifi = true
+            while (connectWifi){
                 var server: ServerSocket?
                 try {
                     server = ServerSocket(38300, 2, InetAddress.getByName(ipHost))
-                    //Отправить IP адрес в Activity
+                    //Для учёта изменений состояния батареи
+                    registerReceiver(batteryBroadcastReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+                    //Отправить IP адрес в уведомление
                     startForeground(NOTIFICATION_ID, newOngoingNotification("IP адрес сервера: $ipHost"))
-                    sendIntentActivity(ipHost)
                 } catch (e: Exception){
                     server = null
-                    sendIntentActivity("")
+                    connectWifi = false
                 }
                 server?.use {
                     do {
-                        var connectWifi = true
                         var socket: Socket?
                         try {
                             //Ожидание клиента к серверу
@@ -116,7 +93,7 @@ class MainServerService : Service() {
                         } catch (e: Exception) {
                             //Отправить IP адрес в Activity
                             startForeground(NOTIFICATION_ID, newOngoingNotification("Сервер остановлен! Нет WiFi"))
-                            sendIntentActivity("")
+                            unregisterReceiver(batteryBroadcastReceiver)
                             socket = null
                             connectWifi = false
                         }
@@ -139,7 +116,8 @@ class MainServerService : Service() {
                                         val inf = """{"time":"$timeSend",
                                        "battery":${battery.json()},
                                        "signal":${myCellInfoLte.json()},
-                                       "sms":${smsInput.count()}}
+                                       "sms":${smsInput.count()},
+                                       "phone":${phoneStatus.count()}}
                                                                    
                                       """
                                         output.println(inf)
@@ -152,6 +130,16 @@ class MainServerService : Service() {
                                        "phone":${phoneStatus.json()}}
                                                                    
                                        """
+                                        output.println(inf)
+                                    }
+
+                                    "DELETE_PHONE" -> {
+                                        //Удаление входящих звонков
+                                        phoneStatus.delete(param)
+                                        val inf = """{"time":"$timeSend",
+                                       "phone":${phoneStatus.count()}}
+                                                                   
+                                      """
                                         output.println(inf)
                                     }
 
@@ -196,19 +184,11 @@ class MainServerService : Service() {
                         }
                     } while (connectWifi)
                 }
-
             }
         }.start()
         return START_STICKY
     }
 
-    private fun sendIntentActivity(s: String){
-        //Отправить IP адрес в Activity
-        Database.setContext(WeakReference( this@MainServerService.applicationContext).get()!!)
-        val addressIp = AddressIp(Database)
-        addressIp.setAddressIp(s)
-    }
-    
     /*
     * Сообщение в баре системе
     * */
@@ -218,7 +198,7 @@ class MainServerService : Service() {
         val notificationBuilder = NotificationCompat.Builder(context, channelId)
         val notification = notificationBuilder.setOngoing(true)
             .setSmallIcon(R.drawable.ic_stat_name)
-            .setContentTitle("Ydav")
+            .setContentTitle(getString(R.string.app_name))
             .setContentText(message)
             .setPriority(NotificationManager.IMPORTANCE_MIN)
             .setCategory(Notification.CATEGORY_SERVICE)
