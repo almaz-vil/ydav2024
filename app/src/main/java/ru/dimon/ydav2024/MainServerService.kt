@@ -6,6 +6,7 @@ import android.app.Service
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -111,67 +112,70 @@ class MainServerService : Service() {
                                 val time = LocalDateTime.now()
                                 val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy EEEE HH:mm:ss ")
                                 val timeSend =  time.format(formatter)
-                                when (command) {
+                                val out_json = when (command) {
                                     "INFO" -> {
-                                        val inf = """{"time":"$timeSend",
+                                        """{"time":"$timeSend",
                                        "battery":${battery.json()},
                                        "signal":${myCellInfoLte.json()},
                                        "sms":${smsInput.count()},
                                        "phone":${phoneStatus.count()}}
                                                                    
                                       """
-                                        output.println(inf)
-
                                     }
 
                                     "PHONE" -> {
                                         //информация о звонках
-                                        val inf = """{"time":"$timeSend",
+                                        """{"time":"$timeSend",
                                        "phone":${phoneStatus.json()}}
                                                                    
                                        """
-                                        output.println(inf)
                                     }
 
                                     "DELETE_PHONE" -> {
                                         //Удаление входящих звонков
                                         phoneStatus.delete(param)
-                                        val inf = """{"time":"$timeSend",
+                                        """{"time":"$timeSend",
                                        "phone":${phoneStatus.count()}}
                                                                    
                                       """
-                                        output.println(inf)
+
                                     }
 
                                     "DELETE_SMS_INPUT" -> {
                                         //Удаление входящих СМС
                                         smsInput.delete(param)
-                                        val inf = """{"time":"$timeSend",
+                                        """{"time":"$timeSend",
                                        "sms":${smsInput.count()}}
                                                                    
                                       """
-                                        output.println(inf)
-                                    }
+                                     }
 
                                     "SMS_INPUT" -> {
                                         //выборка входящий СМС
-                                        val inf = """{"time":"$timeSend",
+                                        """{"time":"$timeSend",
                                        "sms":${smsInput.json()}}
                                                                    
                                        """
-                                        output.println(inf)
                                     }
 
                                     "CONTACT" -> {
                                         //выборка контактов
                                         val contacts = Contacts(refConnect.get()!!)
-                                        val inf = """{"time":"$timeSend",
+                                        """{"time":"$timeSend",
                                        "contact":${contacts.json()}}
                                                                    
                                        """
-                                        output.println(inf)
+                                    }
+                                    else -> {
+                                        """{"time":"$timeSend",
+                                       "ipHost":"$ipHost"}
+                                                                   
+                                      """
+
                                     }
                                 }
+
+                                output.println(out_json)
                                 output.close()
                                 outputStream.close()
                                 input.close()

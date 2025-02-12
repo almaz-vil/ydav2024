@@ -16,13 +16,13 @@ class DBHelper(context: Context):
     fun onCreate(sQLiteDatabase:SQLiteDatabase?) {
         sQLiteDatabase?.execSQL("create table caltel (_id integer primary key autoincrement, phone string, status string, time string);")
         sQLiteDatabase?.execSQL("create table insms (_id integer primary key autoincrement, phone string, body string, time string);")
-        sQLiteDatabase?.execSQL("create table outsms (_id integer primary key autoincrement, nomerfona string, textmsg string, nomerspk string, error string, result string);")
+        sQLiteDatabase?.execSQL("create table outsms (_id integer primary key autoincrement, phone string, body string, id string, error string, result string);")
         sQLiteDatabase?.execSQL("create table battery (_id integer primary key autoincrement, name string, temperature string, level string, status string, charge string);")
         sQLiteDatabase?.execSQL("insert into battery (name, temperature, level, status, charge) values ('BATTERY','-1','-1','-1', '')")
         sQLiteDatabase?.execSQL("create table infolte (_id integer primary key autoincrement, name string, RSSI integer, RSRP integer, RSSNR integer, RSRQ integer);")
         sQLiteDatabase?.execSQL("insert into infolte (name, RSSI, RSRP, RSSNR, RSRQ) values ('INFOLTE',0,0,0,0)")
-        sQLiteDatabase?.execSQL("create table address (_id integer primary key autoincrement, name string, ip string);")
-        sQLiteDatabase?.execSQL("insert into address (name, ip) values ('server','')")
+       // sQLiteDatabase?.execSQL("create table address (_id integer primary key autoincrement, name string, ip string);")
+       // sQLiteDatabase?.execSQL("insert into address (name, ip) values ('server','')")
     }
 
     override

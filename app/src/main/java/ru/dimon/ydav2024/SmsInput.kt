@@ -1,6 +1,8 @@
 package ru.dimon.ydav2024
 
 import android.database.Cursor
+import android.util.Log
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -44,10 +46,11 @@ class SmsInput(database: Database):DbWrite {
                 val time = cursor.getString(idTime)
                 val phone = cursor.getString(idPhone)
                 val body =cursor.getString(idBody)
+                val js_body = JSONObject.quote(body)
                 jsonText+="""{"id":"$id",
                 "time":"$time",
                 "phone":"$phone",
-                "body":"$body"},"""
+                "body":$js_body},"""
             } while (cursor.moveToNext())
         }
         cursor.close()
