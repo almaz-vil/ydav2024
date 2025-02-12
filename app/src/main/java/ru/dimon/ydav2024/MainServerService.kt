@@ -6,7 +6,6 @@ import android.app.Service
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -71,6 +70,8 @@ class MainServerService : Service() {
             val phoneStatus = PhoneStatus(Database)
             //выборка входящий СМС
             val smsInput = SmsInput(Database)
+            //отправка СМС и их статус
+            val smsOutput = SmsOutput(refConnect.get()!!,Database)
 
             var connectWifi = true
             while (connectWifi){
@@ -108,11 +109,10 @@ class MainServerService : Service() {
                                 val inputJson = input.readLine()
                                 val json = JSONTokener(inputJson).nextValue() as JSONObject
                                 val command = json.getString("command")
-                                val param = json.getString("param")
                                 val time = LocalDateTime.now()
                                 val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy EEEE HH:mm:ss ")
                                 val timeSend =  time.format(formatter)
-                                val out_json = when (command) {
+                                val outJson = when (command) {
                                     "INFO" -> {
                                         """{"time":"$timeSend",
                                        "battery":${battery.json()},
@@ -133,6 +133,7 @@ class MainServerService : Service() {
 
                                     "DELETE_PHONE" -> {
                                         //Удаление входящих звонков
+                                        val param = json.getString("param")
                                         phoneStatus.delete(param)
                                         """{"time":"$timeSend",
                                        "phone":${phoneStatus.count()}}
@@ -143,12 +144,32 @@ class MainServerService : Service() {
 
                                     "DELETE_SMS_INPUT" -> {
                                         //Удаление входящих СМС
+                                        val param = json.getString("param")
                                         smsInput.delete(param)
                                         """{"time":"$timeSend",
                                        "sms":${smsInput.count()}}
                                                                    
                                       """
                                      }
+
+                                    "SMS_OUTPUT" -> {
+                                        //Отправка СМС
+                                        val param = json.getJSONObject("param")
+                                        val id = smsOutput.send(param)
+                                        """{"time":"$timeSend",
+                                       "status":${smsOutput.json(id)}}
+                                                                   
+                                      """
+                                    }
+
+                                    "SMS_OUTPUT_STATUS" -> {
+                                        //Получение статуса отправленной СМС
+                                        val id = json.getString("param")
+                                        """{"time":"$timeSend",
+                                       "status":${smsOutput.json(id)}}
+                                                                   
+                                      """
+                                    }
 
                                     "SMS_INPUT" -> {
                                         //выборка входящий СМС
@@ -175,7 +196,7 @@ class MainServerService : Service() {
                                     }
                                 }
 
-                                output.println(out_json)
+                                output.println(outJson)
                                 output.close()
                                 outputStream.close()
                                 input.close()

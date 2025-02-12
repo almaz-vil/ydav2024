@@ -61,6 +61,18 @@
                 <action android:name="android.net.wifi.WIFI_STATE_CHANGED"/>
             </intent-filter>
         </receiver>
+        <receiver android:name=".SmsOutputSentBroadcastReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="@string/sent_sms_action"/>
+            </intent-filter>
+        </receiver>
+        <receiver android:name=".SmsOutputDeliveryBroadcastReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="@string/delivery_sms_action"/>
+            </intent-filter>
+        </receiver>
         <service
             android:name=".SmsIInputService"
             android:enabled="true"
@@ -75,6 +87,14 @@
             android:exported="false" />
         <service
             android:name=".BatteryService"
+            android:enabled="true"
+            android:exported="false" />
+        <service
+            android:name=".SmsOutputDeliveryService"
+            android:enabled="true"
+            android:exported="false" />
+        <service
+            android:name=".SmsOutputSentService"
             android:enabled="true"
             android:exported="false" />
         <service

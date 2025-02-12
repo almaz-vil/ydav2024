@@ -16,7 +16,7 @@ class DBHelper(context: Context):
     fun onCreate(sQLiteDatabase:SQLiteDatabase?) {
         sQLiteDatabase?.execSQL("create table caltel (_id integer primary key autoincrement, phone string, status string, time string);")
         sQLiteDatabase?.execSQL("create table insms (_id integer primary key autoincrement, phone string, body string, time string);")
-        sQLiteDatabase?.execSQL("create table outsms (_id integer primary key autoincrement, phone string, body string, id string, error string, result string);")
+        sQLiteDatabase?.execSQL("create table outputSms (_id integer primary key autoincrement, phone string, text string, id string, sent string, delivery string);")
         sQLiteDatabase?.execSQL("create table battery (_id integer primary key autoincrement, name string, temperature string, level string, status string, charge string);")
         sQLiteDatabase?.execSQL("insert into battery (name, temperature, level, status, charge) values ('BATTERY','-1','-1','-1', '')")
         sQLiteDatabase?.execSQL("create table infolte (_id integer primary key autoincrement, name string, RSSI integer, RSRP integer, RSSNR integer, RSRQ integer);")
