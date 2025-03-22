@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.database.Cursor
+import android.os.Build
 import android.telephony.SmsManager
 import org.json.JSONObject
 
@@ -18,6 +19,8 @@ class SmsOutput(context: Context, database: Database):DbWrite {
     private var text = ""
     private var sent = "none"
     private var delivery = "none"
+    private var sentTime = ""
+    private var deliveryTime = ""
 
 
     private fun read(){
@@ -26,10 +29,14 @@ class SmsOutput(context: Context, database: Database):DbWrite {
             db.query(this.table, null, "id = ?", arrayOf(this.id), null, null, null)
         val idSent = cursor.getColumnIndex("sent")
         val idDelivery = cursor.getColumnIndex("delivery")
+        val idSentTime = cursor.getColumnIndex("sent_time")
+        val idDeliveryTime = cursor.getColumnIndex("delivery_time")
         if (cursor.moveToFirst()) {
             do {
                 this.sent = cursor.getString(idSent)
                 this.delivery = cursor.getString(idDelivery)
+                this.sentTime = cursor.getString(idSentTime)
+                this.deliveryTime = cursor.getString(idDeliveryTime)
             } while (cursor.moveToNext())
         }
         cursor.close()
@@ -40,17 +47,19 @@ class SmsOutput(context: Context, database: Database):DbWrite {
         this.id = id
         this.read()
         return """{"id":${this.id},
-                "sent":${this.sent},
-                "delivery":"${this.delivery}"}"""
+                "sent":{"result":"${this.sent}",
+                        "time":"${this.sentTime}"},
+                "delivery":{"result":"${this.delivery}",
+                        "time":"${this.deliveryTime}"}}"""
     }
 
     fun writeSent(id: String, sent: String){
-        val sql = "UPDATE $table SET delivery='$sent' WHERE id='$id'"
+        val sql = "UPDATE $table SET sent='$sent', sent_time='${timeNow("HH:mm:ss dd-MM")}' WHERE id='$id'"
         exec(_database, sql)
     }
 
     fun writeDelivery(id: String, delivery: String){
-        val sql = "UPDATE $table SET delivery='$delivery' WHERE id='$id'"
+        val sql = "UPDATE $table SET delivery='$delivery', delivery_time='${timeNow("HH:mm:ss dd-MM")}' WHERE id='$id'"
         exec(_database, sql)
     }
 
@@ -58,7 +67,7 @@ class SmsOutput(context: Context, database: Database):DbWrite {
         this.id = param.getString("id")
         this.phone = param.getString("phone")
         this.text =  param.getString("text")
-        val sql = "INSERT INTO $table(phone, text, id, sent, delivery) VALUES ('$phone', '$text', '$id', 'none', 'none')"
+        val sql = "INSERT INTO $table(phone, text, id, sent, delivery, sent_time, delivery_time) VALUES ('$phone', '$text', '$id', 'none', 'none', '', '')"
         exec(_database, sql)
         sendSms()
         return this.id
@@ -83,7 +92,13 @@ class SmsOutput(context: Context, database: Database):DbWrite {
             deliveryIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        val smsManager = _context.getSystemService(SmsManager::class.java) as SmsManager
+        //val smsManager = _context.getSystemService(SmsManager::class.java) as SmsManager
+        val smsManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            _context.getSystemService<SmsManager>(SmsManager::class.java)
+        } else {
+            SmsManager.getDefault()
+        }
+
         smsManager.sendTextMessage(
             this.phone,
             null,

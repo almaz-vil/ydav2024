@@ -6,6 +6,7 @@ import android.app.Service
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -107,6 +108,7 @@ class MainServerService : Service() {
                                 val inputStreamReader = InputStreamReader(inputStream)
                                 val input = BufferedReader(inputStreamReader)
                                 val inputJson = input.readLine()
+                                Log.d("Ydav", inputJson)
                                 val json = JSONTokener(inputJson).nextValue() as JSONObject
                                 val command = json.getString("command")
                                 val time = LocalDateTime.now()
@@ -154,8 +156,8 @@ class MainServerService : Service() {
 
                                     "SMS_OUTPUT" -> {
                                         //Отправка СМС
-                                        val param = json.getJSONObject("param")
-                                        val id = smsOutput.send(param)
+                                        val param = json.getString("param")
+                                        val id = smsOutput.send(JSONObject(param))
                                         """{"time":"$timeSend",
                                        "status":${smsOutput.json(id)}}
                                                                    

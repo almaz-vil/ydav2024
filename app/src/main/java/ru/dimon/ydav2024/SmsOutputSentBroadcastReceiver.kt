@@ -3,6 +3,7 @@ package ru.dimon.ydav2024
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import java.lang.ref.WeakReference
 
 class SmsOutputSentBroadcastReceiver: BroadcastReceiver(){
@@ -15,6 +16,7 @@ class SmsOutputSentBroadcastReceiver: BroadcastReceiver(){
                 SmsOutputSentService::class.java)
             smsOutputSentService.putExtra("id", id)
             smsOutputSentService.putExtra("sent", resultCode)
+            Log.d("Ydav", "BR id=$id sent=${resultCode} ")
             context.startService(smsOutputSentService)
 
         }

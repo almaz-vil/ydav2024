@@ -24,10 +24,7 @@ class PhoneStatus(database: Database):DbWrite {
         phone:String="",
         status:String=""
     ){
-        val time= LocalDateTime.now()
-        val formatter = DateTimeFormatter.ofPattern("HH:mm:ss dd-MM-yyyy")
-        val formatTime = time.format(formatter)
-        val sql = "INSERT INTO $table(phone, status, time) VALUES ('$phone', '$status', '$formatTime')"
+        val sql = "INSERT INTO $table(phone, status, time) VALUES ('$phone', '$status', '${timeNow()}')"
         exec(this._database, sql)
 
     }

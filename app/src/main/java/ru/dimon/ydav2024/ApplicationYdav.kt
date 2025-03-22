@@ -30,5 +30,11 @@ class ApplicationYdav: Application() {
         //Для учёта изменений состояния WIFI
         val wifiBroadcastReceiver = WifiBroadcastReceiver()
         registerReceiver(wifiBroadcastReceiver, IntentFilter("android.net.wifi.WIFI_STATE_CHANGED"))
+        //СМС
+        val smsOutputSentBroadcastReceiver = SmsOutputSentBroadcastReceiver()
+        registerReceiver(smsOutputSentBroadcastReceiver, IntentFilter("ru.dimon.ydav2024.SENT_SMS_ACTION"), RECEIVER_NOT_EXPORTED)
+        val smsOutputDeliveryBroadcastReceiver = SmsInputBroadcastReceiver()
+        registerReceiver(smsOutputDeliveryBroadcastReceiver, IntentFilter("ru.dimon.ydav2024.DELIVERY_SMS_ACTION"), RECEIVER_NOT_EXPORTED)
+
     }
 }
