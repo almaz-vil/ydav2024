@@ -6,7 +6,6 @@ import android.app.Service
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -108,9 +107,15 @@ class MainServerService : Service() {
                                 val inputStreamReader = InputStreamReader(inputStream)
                                 val input = BufferedReader(inputStreamReader)
                                 val inputJson = input.readLine()
-                                Log.d("Ydav", inputJson)
-                                val json = JSONTokener(inputJson).nextValue() as JSONObject
-                                val command = json.getString("command")
+                                var command: String
+                                var json: JSONObject? = null
+                                try {
+                                    json = JSONTokener(inputJson).nextValue() as JSONObject
+                                    command = json.getString("command")
+                                }
+                                catch (e: Exception){
+                                    command = "INFO"
+                                }
                                 val time = LocalDateTime.now()
                                 val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy EEEE HH:mm:ss ")
                                 val timeSend =  time.format(formatter)
@@ -135,8 +140,9 @@ class MainServerService : Service() {
 
                                     "DELETE_PHONE" -> {
                                         //Удаление входящих звонков
-                                        val param = json.getString("param")
-                                        phoneStatus.delete(param)
+                                        val param = json?.getString("param")
+                                        if (param != null)
+                                            phoneStatus.delete(param)
                                         """{"time":"$timeSend",
                                        "phone":${phoneStatus.count()}}
                                                                    
@@ -146,8 +152,9 @@ class MainServerService : Service() {
 
                                     "DELETE_SMS_INPUT" -> {
                                         //Удаление входящих СМС
-                                        val param = json.getString("param")
-                                        smsInput.delete(param)
+                                        val param = json?.getString("param")
+                                        if (param != null)
+                                                smsInput.delete(param)
                                         """{"time":"$timeSend",
                                        "sms":${smsInput.count()}}
                                                                    
@@ -156,8 +163,11 @@ class MainServerService : Service() {
 
                                     "SMS_OUTPUT" -> {
                                         //Отправка СМС
-                                        val param = json.getString("param")
-                                        val id = smsOutput.send(JSONObject(param))
+                                        val param = json?.getString("param")
+                                        var id = "1"
+                                        if (param != null) {
+                                            id = smsOutput.send(JSONObject(param))
+                                        }
                                         """{"time":"$timeSend",
                                        "status":${smsOutput.json(id)}}
                                                                    
@@ -166,9 +176,9 @@ class MainServerService : Service() {
 
                                     "SMS_OUTPUT_STATUS" -> {
                                         //Получение статуса отправленной СМС
-                                        val id = json.getString("param")
+                                        val id = json?.getString("param")
                                         """{"time":"$timeSend",
-                                       "status":${smsOutput.json(id)}}
+                                       "status":${smsOutput.json(id!!)}}
                                                                    
                                       """
                                     }

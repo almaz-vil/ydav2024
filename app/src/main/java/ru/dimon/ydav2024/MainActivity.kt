@@ -5,14 +5,15 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.LinkProperties
+import android.net.Uri
 import android.os.Bundle
 import android.text.Html
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -23,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
@@ -37,18 +37,30 @@ import java.lang.ref.WeakReference
 
 
 class MainActivity : ComponentActivity() {
+    @Composable
+    private  fun www(){
+        Text("Ydav2024 for Android версия: 1.1.0")
+        Text("Клиента для сервера можно найти на сайте https://ydav-android.p-k-53.ru/",
+            modifier = Modifier.clickable(onClick = {
+                val url = "https://ydav-android.p-k-53.ru"
+                val i = Intent(Intent.ACTION_VIEW)
+                i.setData(Uri.parse(url))
+                startActivity(i)
+            }), textDecoration = TextDecoration.Underline)
+    }
     @Preview
     @Composable
     private fun politic(){
         val html = stringResource(R.string.politic)
         val textPolitic = remember { Html.fromHtml(html, Html.FROM_HTML_MODE_COMPACT) }
-
         val boxVisible = remember { mutableStateOf(false) }
         Column( modifier=Modifier.padding(10.dp)) {
             Text(text = "Продолжая использование вы соглашаетесь с политикой конфиденциальности:",
             modifier = Modifier.clickable( onClick = {boxVisible.value=true}), textDecoration = TextDecoration.Underline)
             AnimatedVisibility(visible = boxVisible.value) {
-                Column (modifier = Modifier.padding(10.dp).background(colorResource(R.color.fon))) {
+                Column (modifier = Modifier
+                    .padding(10.dp)
+                    .background(colorResource(R.color.fon))) {
                     Button({boxVisible.value=false}) { Text(text = "Согласен", fontSize = 24.sp) }
                     Text(
                         text = textPolitic.toString(),
@@ -95,6 +107,7 @@ class MainActivity : ComponentActivity() {
    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         var hostIp = getDeviceIpAddress(WeakReference(this).get())
+       Log.d("Ydav2024", "host $hostIp" )
         val arrayPermissionString = mutableMapOf(
             "android.permission.ANSWER_PHONE_CALLS" to " \"Список вызовов\"",
             "android.permission.ACCESS_COARSE_LOCATION" to " \"Местоположение\"",
@@ -123,6 +136,7 @@ class MainActivity : ComponentActivity() {
             }
             setContent {
                 Column(modifier=Modifier.padding(horizontal = 5.dp, vertical = 20.dp)){
+                    www()
                     Text(
                      when (hostIp){
                         null , "" ->"Внимание, сервер остановлен! Ожидается включение WI-FI. Активны разрешения: "
@@ -141,6 +155,7 @@ class MainActivity : ComponentActivity() {
             val appName = getString(R.string.app_name)
             setContent {
                 Column(modifier=Modifier.padding(horizontal = 5.dp)){
+                    www()
                     Text("Внимание, дальнейшая работа программы $appName невозможна, пока")
                     for (permission in permissionFalse){
                         Row(modifier=Modifier.padding(horizontal = 10.dp)) {                            Text("у Вас нет разрешения:")
