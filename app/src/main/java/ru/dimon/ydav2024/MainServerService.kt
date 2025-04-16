@@ -6,6 +6,7 @@ import android.app.Service
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -19,6 +20,8 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Formatter
+import java.util.GregorianCalendar
 
 
 class MainServerService : Service() {
@@ -58,20 +61,22 @@ class MainServerService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val ipHost = intent?.getStringExtra("Host")
         startForeground(NOTIFICATION_ID, newOngoingNotification(ipHost))
+        Log.d("Ydav2024", "servis host $ipHost" )
+        val refConnect = WeakReference(this.applicationContext)
+        Database.setContext(refConnect.get()!!)
+        val batteryBroadcastReceiver = BatteryBroadcastReceiver()
+        // об состоянии батареи
+        val battery = Battery(Database)
+        //получение информации о сети
+        val myCellInfoLte = MyCellInfoLte(refConnect.get()!!,Database)
+        //информация о входящих звонках
+        val phoneStatus = PhoneStatus(Database)
+        //выборка входящий СМС
+        val smsInput = SmsInput(Database)
+        //отправка СМС и их статус
+        val smsOutput = SmsOutput(refConnect.get()!!,Database)
         Thread{
-            val refConnect = WeakReference(this.applicationContext)
-            Database.setContext(refConnect.get()!!)
-            val batteryBroadcastReceiver = BatteryBroadcastReceiver()
-            // об состоянии батареи
-            val battery = Battery(Database)
-            //получение информации о сети
-            val myCellInfoLte = MyCellInfoLte(refConnect.get()!!,Database)
-            //информация о входящих звонках
-            val phoneStatus = PhoneStatus(Database)
-            //выборка входящий СМС
-            val smsInput = SmsInput(Database)
-            //отправка СМС и их статус
-            val smsOutput = SmsOutput(refConnect.get()!!,Database)
+
 
             var connectWifi = true
             while (connectWifi){
@@ -116,9 +121,13 @@ class MainServerService : Service() {
                                 catch (e: Exception){
                                     command = "INFO"
                                 }
-                                val time = LocalDateTime.now()
-                                val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy EEEE HH:mm:ss ")
-                                val timeSend =  time.format(formatter)
+                            //    val time = LocalDateTime.now()
+                          //      val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy EEEE HH:mm:ss ")
+                                val gregorianCalendar = GregorianCalendar()
+                                val formatter = Formatter()
+                                val t=gregorianCalendar.timeInMillis;
+                                val timeSend =  formatter.format("%tF %tT ",t, t)
+
                                 val outJson = when (command) {
                                     "INFO" -> {
                                         """{"time":"$timeSend",

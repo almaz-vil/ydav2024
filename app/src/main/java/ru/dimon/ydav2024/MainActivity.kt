@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.LinkProperties
 import android.net.Uri
+import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.text.Html
 import android.util.Log
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import java.lang.ref.WeakReference
+import java.net.InetAddress
 
 
 class MainActivity : ComponentActivity() {
@@ -75,12 +77,32 @@ class MainActivity : ComponentActivity() {
      * IP адрес устройства
      */
     private fun getDeviceIpAddress(context: Context?):String? {
-        val connectivityManager = context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val linkProperties: LinkProperties? = connectivityManager.getLinkProperties(connectivityManager.activeNetwork)
-        if (linkProperties!=null) {
-            return linkProperties.linkAddresses[1].address.hostAddress!!
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val connectivityManager =
+                context?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val linkProperties: LinkProperties? =
+                connectivityManager.getLinkProperties(connectivityManager.activeNetwork)
+            if (linkProperties != null) {
+                return linkProperties.linkAddresses[1].address.hostAddress!!
+            }
+            return null
+        }else{
+            val wifiManager = getSystemService(WIFI_SERVICE) as WifiManager
+            val wifiinfo = wifiManager.connectionInfo
+            val ip_adress = wifiinfo.ipAddress
+           // val localHost = InetAddress.getLocalHost()
+            //val ip1 = localHost.hostAddress
+
+
+            return String.format(
+                "%d.%d.%d.%d", (ip_adress and 0xff),
+                (ip_adress shr 8 and 0xff),
+                (ip_adress shr 16 and 0xff),
+                (ip_adress shr 24 and 0xff)
+            )
+
         }
-        return null
     }
 
    private fun startServiceMain(){
@@ -93,11 +115,17 @@ class MainActivity : ComponentActivity() {
                val ipHost = getDeviceIpAddress(WeakReference(this).get())
                val mainServerService =Intent(WeakReference(this).get(), MainServerService::class.java)
                mainServerService.putExtra("Host", ipHost)
-               ContextCompat.startForegroundService(
-                   WeakReference(this).get()!!,
-                   mainServerService
-               )
-               startForegroundService(intent)
+               if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+
+                   ContextCompat.startForegroundService(
+                       WeakReference(this).get()!!,
+                       mainServerService
+                   )
+                   startForegroundService(intent)
+               }else{
+                   Log.d("Ydav2024", "Startings Server" )
+                    startService(mainServerService)
+               }
            } else {
                stopService(intent)
            }
@@ -108,20 +136,43 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         var hostIp = getDeviceIpAddress(WeakReference(this).get())
        Log.d("Ydav2024", "host $hostIp" )
-        val arrayPermissionString = mutableMapOf(
-            "android.permission.ANSWER_PHONE_CALLS" to " \"Список вызовов\"",
-            "android.permission.ACCESS_COARSE_LOCATION" to " \"Местоположение\"",
-            "android.permission.RECEIVE_SMS" to " \"СМС\"",
-            "android.permission.READ_CONTACTS" to " \"Контакты\"",
-            "android.permission.READ_PHONE_STATE" to " \"Телефон\"",
-            "android.permission.SEND_SMS" to " \"Отправка СМС\"")
-        val arrayPermission = mutableMapOf(
-            "android.permission.ANSWER_PHONE_CALLS" to true,
-            "android.permission.ACCESS_COARSE_LOCATION" to true,
-            "android.permission.RECEIVE_SMS" to true,
-            "android.permission.READ_CONTACTS" to true,
-            "android.permission.READ_PHONE_STATE" to true,
-            "android.permission.SEND_SMS" to true)
+
+       var arrayPermissionString = mutableMapOf(
+           "android.permission.ANSWER_PHONE_CALLS" to " \"Список вызовов\"",
+           "android.permission.ACCESS_COARSE_LOCATION" to " \"Местоположение\"",
+           "android.permission.RECEIVE_SMS" to " \"СМС\"",
+           "android.permission.READ_CONTACTS" to " \"Контакты\"",
+           "android.permission.READ_PHONE_STATE" to " \"Телефон\"",
+           "android.permission.SEND_SMS" to " \"Отправка СМС\""
+       )
+       var arrayPermission = mutableMapOf(
+           "android.permission.ANSWER_PHONE_CALLS" to true,
+           "android.permission.ACCESS_COARSE_LOCATION" to true,
+           "android.permission.RECEIVE_SMS" to true,
+           "android.permission.READ_CONTACTS" to true,
+           "android.permission.READ_PHONE_STATE" to true,
+           "android.permission.SEND_SMS" to true
+       )
+       if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+       }else{
+
+            arrayPermissionString = mutableMapOf(
+           //    "android.permission.ANSWER_PHONE_CALLS" to " \"Список вызовов\"",
+               "android.permission.ACCESS_COARSE_LOCATION" to " \"Местоположение\"",
+               "android.permission.RECEIVE_SMS" to " \"СМС\"",
+               "android.permission.READ_CONTACTS" to " \"Контакты\"",
+               "android.permission.READ_PHONE_STATE" to " \"Телефон\"",
+               "android.permission.SEND_SMS" to " \"Отправка СМС\""
+           )
+           arrayPermission = mutableMapOf(
+             //  "android.permission.ANSWER_PHONE_CALLS" to true,
+               "android.permission.ACCESS_COARSE_LOCATION" to true,
+               "android.permission.RECEIVE_SMS" to true,
+               "android.permission.READ_CONTACTS" to true,
+               "android.permission.READ_PHONE_STATE" to true,
+               "android.permission.SEND_SMS" to true
+           )
+       }
         for (permission in arrayPermission){
             val permissionStatus = ContextCompat.checkSelfPermission(this,permission.key)
             if (permissionStatus == PackageManager.PERMISSION_DENIED){
@@ -130,8 +181,8 @@ class MainActivity : ComponentActivity() {
         }
         val permissionFalse = arrayPermission.filter { !it.value }
         if (permissionFalse.isEmpty()) {
+            startServiceMain()
             if (hostIp==null) {
-                startServiceMain()
                 hostIp = getDeviceIpAddress(WeakReference(this).get())
             }
             setContent {

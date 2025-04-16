@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "ru.dimon.ydav2024"
-        minSdk = 29
+        minSdk = 24
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"

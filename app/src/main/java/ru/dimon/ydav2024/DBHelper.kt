@@ -19,8 +19,8 @@ class DBHelper(context: Context):
         sQLiteDatabase?.execSQL("create table outputSms (_id integer primary key autoincrement, phone string, text string, id string, sent string, sent_time string, delivery string, delivery_time string);")
         sQLiteDatabase?.execSQL("create table battery (_id integer primary key autoincrement, name string, temperature string, level string, status string, charge string);")
         sQLiteDatabase?.execSQL("insert into battery (name, temperature, level, status, charge) values ('BATTERY','-1','-1','-1', '')")
-        sQLiteDatabase?.execSQL("create table infolte (_id integer primary key autoincrement, name string, RSSI integer, RSRP integer, RSSNR integer, RSRQ integer);")
-        sQLiteDatabase?.execSQL("insert into infolte (name, RSSI, RSRP, RSSNR, RSRQ) values ('INFOLTE',0,0,0,0)")
+        sQLiteDatabase?.execSQL("create table infolte (_id integer primary key autoincrement, name string, sim_county_iso string, sim_operator_name string, sim_operator string, network_type string, param_signal string);")
+        sQLiteDatabase?.execSQL("insert into infolte (name, sim_county_iso, sim_operator_name, sim_operator, network_type, param_signal) values ('INFOLTE','','','','','')")
        // sQLiteDatabase?.execSQL("create table address (_id integer primary key autoincrement, name string, ip string);")
        // sQLiteDatabase?.execSQL("insert into address (name, ip) values ('server','')")
     }
