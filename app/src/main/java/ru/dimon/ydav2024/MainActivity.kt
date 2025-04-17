@@ -9,7 +9,6 @@ import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.text.Html
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
@@ -35,13 +34,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import java.lang.ref.WeakReference
-import java.net.InetAddress
 
 
 class MainActivity : ComponentActivity() {
     @Composable
-    private  fun www(){
-        Text("Ydav2024 for Android версия: 1.1.0")
+    private  fun Www(){
+        Text("Ydav2024 for Android версия: 1.2.0")
         Text("Клиента для сервера можно найти на сайте https://ydav-android.p-k-53.ru/",
             modifier = Modifier.clickable(onClick = {
                 val url = "https://ydav-android.p-k-53.ru"
@@ -52,7 +50,7 @@ class MainActivity : ComponentActivity() {
     }
     @Preview
     @Composable
-    private fun politic(){
+    private fun Politic(){
         val html = stringResource(R.string.politic)
         val textPolitic = remember { Html.fromHtml(html, Html.FROM_HTML_MODE_COMPACT) }
         val boxVisible = remember { mutableStateOf(false) }
@@ -90,16 +88,12 @@ class MainActivity : ComponentActivity() {
         }else{
             val wifiManager = getSystemService(WIFI_SERVICE) as WifiManager
             val wifiinfo = wifiManager.connectionInfo
-            val ip_adress = wifiinfo.ipAddress
-           // val localHost = InetAddress.getLocalHost()
-            //val ip1 = localHost.hostAddress
-
-
+            val ipAdress = wifiinfo.ipAddress
             return String.format(
-                "%d.%d.%d.%d", (ip_adress and 0xff),
-                (ip_adress shr 8 and 0xff),
-                (ip_adress shr 16 and 0xff),
-                (ip_adress shr 24 and 0xff)
+                "%d.%d.%d.%d", (ipAdress and 0xff),
+                (ipAdress shr 8 and 0xff),
+                (ipAdress shr 16 and 0xff),
+                (ipAdress shr 24 and 0xff)
             )
 
         }
@@ -111,19 +105,16 @@ class MainActivity : ComponentActivity() {
                MainServerService::class.java
            )
            if (!MainServerService.isServiceCreated()) {
-
                val ipHost = getDeviceIpAddress(WeakReference(this).get())
                val mainServerService =Intent(WeakReference(this).get(), MainServerService::class.java)
                mainServerService.putExtra("Host", ipHost)
                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-
                    ContextCompat.startForegroundService(
                        WeakReference(this).get()!!,
                        mainServerService
                    )
                    startForegroundService(intent)
                }else{
-                   Log.d("Ydav2024", "Startings Server" )
                     startService(mainServerService)
                }
            } else {
@@ -133,10 +124,8 @@ class MainActivity : ComponentActivity() {
 
 
    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        var hostIp = getDeviceIpAddress(WeakReference(this).get())
-       Log.d("Ydav2024", "host $hostIp" )
-
+       super.onCreate(savedInstanceState)
+       var hostIp = getDeviceIpAddress(WeakReference(this).get())
        var arrayPermissionString = mutableMapOf(
            "android.permission.ANSWER_PHONE_CALLS" to " \"Список вызовов\"",
            "android.permission.ACCESS_COARSE_LOCATION" to " \"Местоположение\"",
@@ -153,11 +142,8 @@ class MainActivity : ComponentActivity() {
            "android.permission.READ_PHONE_STATE" to true,
            "android.permission.SEND_SMS" to true
        )
-       if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-       }else{
-
+       if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
             arrayPermissionString = mutableMapOf(
-           //    "android.permission.ANSWER_PHONE_CALLS" to " \"Список вызовов\"",
                "android.permission.ACCESS_COARSE_LOCATION" to " \"Местоположение\"",
                "android.permission.RECEIVE_SMS" to " \"СМС\"",
                "android.permission.READ_CONTACTS" to " \"Контакты\"",
@@ -165,7 +151,6 @@ class MainActivity : ComponentActivity() {
                "android.permission.SEND_SMS" to " \"Отправка СМС\""
            )
            arrayPermission = mutableMapOf(
-             //  "android.permission.ANSWER_PHONE_CALLS" to true,
                "android.permission.ACCESS_COARSE_LOCATION" to true,
                "android.permission.RECEIVE_SMS" to true,
                "android.permission.READ_CONTACTS" to true,
@@ -187,7 +172,7 @@ class MainActivity : ComponentActivity() {
             }
             setContent {
                 Column(modifier=Modifier.padding(horizontal = 5.dp, vertical = 20.dp)){
-                    www()
+                    Www()
                     Text(
                      when (hostIp){
                         null , "" ->"Внимание, сервер остановлен! Ожидается включение WI-FI. Активны разрешения: "
@@ -199,14 +184,14 @@ class MainActivity : ComponentActivity() {
                             Text(arrayPermissionString.getValue(permission.key), fontWeight = FontWeight.Bold)
                         }
                     }
-                    politic()
+                    Politic()
                 }
             }
         } else {
             val appName = getString(R.string.app_name)
             setContent {
                 Column(modifier=Modifier.padding(horizontal = 5.dp)){
-                    www()
+                    Www()
                     Text("Внимание, дальнейшая работа программы $appName невозможна, пока")
                     for (permission in permissionFalse){
                         Row(modifier=Modifier.padding(horizontal = 10.dp)) {                            Text("у Вас нет разрешения:")
@@ -215,7 +200,7 @@ class MainActivity : ComponentActivity() {
                     }
                     Text("Для устранения проблемы дайте в настройках $appName выше перечисленные разрешения.")
                     Text("Перезапустите $appName.")
-                    politic()
+                    Politic()
                 }
             }
 

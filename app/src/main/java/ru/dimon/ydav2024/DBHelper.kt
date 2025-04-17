@@ -8,7 +8,7 @@ import java.lang.ref.WeakReference
 class DBHelper(context: Context):
     SQLiteOpenHelper(WeakReference(context).get(), DATABASE_NAME, null, DATABASE_VERSION){
     companion object{
-        private const val DATABASE_VERSION = 1
+        private const val DATABASE_VERSION = 2
         private const val DATABASE_NAME = "myDB"
     }
 
@@ -21,8 +21,6 @@ class DBHelper(context: Context):
         sQLiteDatabase?.execSQL("insert into battery (name, temperature, level, status, charge) values ('BATTERY','-1','-1','-1', '')")
         sQLiteDatabase?.execSQL("create table infolte (_id integer primary key autoincrement, name string, sim_county_iso string, sim_operator_name string, sim_operator string, network_type string, param_signal string);")
         sQLiteDatabase?.execSQL("insert into infolte (name, sim_county_iso, sim_operator_name, sim_operator, network_type, param_signal) values ('INFOLTE','','','','','')")
-       // sQLiteDatabase?.execSQL("create table address (_id integer primary key autoincrement, name string, ip string);")
-       // sQLiteDatabase?.execSQL("insert into address (name, ip) values ('server','')")
     }
 
     override
