@@ -1,7 +1,8 @@
 package ru.dimon.ydav2024
 
 import android.database.Cursor
-import android.util.Log
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -32,14 +33,14 @@ class SmsInput(database: Database):DbWrite {
         exec(_database, sql)
     }
 
-    fun json():String{
-        var jsonText=""
+    fun json():List<SmsData>{
         val db = _database.getDatabase()
         val cursor: Cursor = db.query(table, null, null, null, null, null, "_id DESC")
         val idId =cursor.getColumnIndex("_id")
         val idTime =cursor.getColumnIndex("time")
         val idPhone =cursor.getColumnIndex("phone")
         val idBody =cursor.getColumnIndex("body")
+        val smsList = ArrayList<SmsData>()
         if (cursor.moveToFirst()){
             do {
                 val id = cursor.getInt(idId)
@@ -47,15 +48,18 @@ class SmsInput(database: Database):DbWrite {
                 val phone = cursor.getString(idPhone)
                 val body =cursor.getString(idBody)
                 val js_body = JSONObject.quote(body)
-                jsonText+="""{"id":"$id",
-                "time":"$time",
-                "phone":"$phone",
-                "body":$js_body},"""
+                smsList.add(SmsData(id.toString(), time, phone, js_body))
             } while (cursor.moveToNext())
         }
         cursor.close()
-        return "["+jsonText.dropLast(1)+"]"
+        return smsList
     }
 
 
 }
+
+@Serializable
+data class SmsData(val id: String,
+                   val time: String,
+                   val phone: String,
+                   val body: String)

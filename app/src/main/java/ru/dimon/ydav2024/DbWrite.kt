@@ -1,13 +1,8 @@
 package ru.dimon.ydav2024
 
 import android.telephony.TelephonyManager
-import java.text.SimpleDateFormat
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Date
 import java.util.Formatter
 import java.util.GregorianCalendar
-import java.util.Locale
 
 interface DbWrite {
     fun exec(database: Database, sql: String){

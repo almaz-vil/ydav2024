@@ -2,19 +2,22 @@ package ru.dimon.ydav2024
 
 import android.content.Context
 import android.provider.ContactsContract
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import java.lang.ref.WeakReference
 
 class Contacts(context: Context) {
 
     private val _context=WeakReference(context)
 
-    fun json():String {
-        var jsonText =""
+    fun json():List<ContactData> {
         val context = _context.get()
         val cursor = context!!.contentResolver.query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null)
         val idName = cursor!!.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME)
         val idID = cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
         val idPhone = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)
+        val persion = ArrayList<ContactData>()
+        val phones = ArrayList<String>()
         if (cursor.moveToFirst()) {
             do {
                 val name = cursor.getString(idName)
@@ -29,21 +32,24 @@ class Contacts(context: Context) {
                         null
                     )
                     val idNumber = ContactsContract.CommonDataKinds.Phone.NUMBER
-                    var jsonPhone = ""
                     if (cursorT!!.moveToFirst()) {
                         do {
                             val phone = cursorT.getString(cursorT.getColumnIndexOrThrow(idNumber))
-                            jsonPhone+=""""$phone","""
+                            phones.add(phone)
                         } while (cursorT.moveToNext())
                     }
                     cursorT.close()
-                    jsonText+="""{"name":"$name", "phone":[${jsonPhone.dropLast(1)}]},"""
+                    persion.add(ContactData(name, phones))
 
                 }
             } while (cursor.moveToNext())
         }
         cursor.close()
-        return  "["+jsonText.dropLast(1)+"]"
+        return persion
     }
 
+
 }
+
+@Serializable
+data class ContactData(val name: String, val phone: List<String>)

@@ -16,6 +16,8 @@ import android.telephony.SignalStrength
 import android.telephony.TelephonyManager
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat.checkSelfPermission
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import java.lang.ref.WeakReference
 
 @Deprecated("for Android 7")
@@ -146,76 +148,79 @@ class MyLising(context: Context,database: Database):DbWrite, PhoneStateListener(
         cursor.close()
     }
 
-    fun json(): String {
-        this.read()
-        val sParam = if (this.signalParam.length>2){this.signalParam.drop(1).dropLast(1)} else {this.signalParam}
-        val sP = sParam.replace(",","")
-        return """{"signal_param":"${sP}",
-            "network_type":"${this.networkType}",
-            "sim_operator_name":"${this.simOperatorName}",
-            "sim_operator":"${this.simOperator}",
-            "sim_county_iso":"${this.simCountyIso}"}"""
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun getCellSignalParam(cellSignalStrength:  CellSignalStrengthLte): Map<String, String>{
+        val cellParam = mutableMapOf<String, String>()
+        cellParam["RSRP"]=cellSignalStrength.rsrp.toString()
+        cellParam["RSRQ"]=cellSignalStrength.rsrq.toString()
+        cellParam["RSSNR"]=cellSignalStrength.rssnr.toString()
+        cellParam["RSCP в ASU"]=cellSignalStrength.asuLevel.toString()
+        cellParam["Cqi"]=cellSignalStrength.cqi.toString()
+        cellParam["Dbm"]=cellSignalStrength.dbm.toString()
+        cellParam["Level"]=cellSignalStrength.level.toString()
+        return cellParam
     }
-        @RequiresApi(Build.VERSION_CODES.O)
-        private fun getCellSignalParam(cellSignalStrength:  CellSignalStrengthLte): Map<String, String>{
-            val cellParam = mutableMapOf<String, String>()
-            cellParam["RSRP"]=cellSignalStrength.rsrp.toString()
-            cellParam["RSRQ"]=cellSignalStrength.rsrq.toString()
-            cellParam["RSSNR"]=cellSignalStrength.rssnr.toString()
-            cellParam["RSCP в ASU"]=cellSignalStrength.asuLevel.toString()
-            cellParam["Cqi"]=cellSignalStrength.cqi.toString()
-            cellParam["Dbm"]=cellSignalStrength.dbm.toString()
-            cellParam["Level"]=cellSignalStrength.level.toString()
-            return cellParam
-        }
-        private fun getCellSignalParam(cellSignalStrength:  CellSignalStrengthGsm): Map<String, String>{
-            val cellParam = mutableMapOf<String, String>()
-            cellParam["RSCP в ASU"]=cellSignalStrength.asuLevel.toString()
-            cellParam["Dbm"]=cellSignalStrength.dbm.toString()
-            cellParam["Level"]=cellSignalStrength.level.toString()
-            return cellParam
-        }
 
-        private fun getCellSignalParam(cellSignalStrength:  CellSignalStrengthCdma): Map<String, String>{
-            val cellParam = mutableMapOf<String, String>()
-            cellParam["RSCP в ASU"]=cellSignalStrength.asuLevel.toString()
-            cellParam["Dbm"]=cellSignalStrength.dbm.toString()
-            cellParam["Level"]=cellSignalStrength.level.toString()
-            return cellParam
-        }
+    private fun getCellSignalParam(cellSignalStrength:  CellSignalStrengthGsm): Map<String, String>{
+        val cellParam = mutableMapOf<String, String>()
+        cellParam["RSCP в ASU"]=cellSignalStrength.asuLevel.toString()
+        cellParam["Dbm"]=cellSignalStrength.dbm.toString()
+        cellParam["Level"]=cellSignalStrength.level.toString()
+        return cellParam
+    }
+
+    private fun getCellSignalParam(cellSignalStrength:  CellSignalStrengthCdma): Map<String, String>{
+        val cellParam = mutableMapOf<String, String>()
+        cellParam["RSCP в ASU"]=cellSignalStrength.asuLevel.toString()
+        cellParam["Dbm"]=cellSignalStrength.dbm.toString()
+        cellParam["Level"]=cellSignalStrength.level.toString()
+        return cellParam
+    }
+
+    private fun getCellSignalParam(cellSignalStrength:  CellSignalStrengthNr): Map<String, String>{
+        val cellParam = mutableMapOf<String, String>()
+        cellParam["RSCP в ASU"]=cellSignalStrength.asuLevel.toString()
+        cellParam["Dbm"]=cellSignalStrength.dbm.toString()
+        cellParam["Level"]=cellSignalStrength.level.toString()
+        return cellParam
+    }
 
 
-        private fun getCellSignalParam(cellSignalStrength:  CellSignalStrengthNr): Map<String, String>{
-            val cellParam = mutableMapOf<String, String>()
-            cellParam["RSCP в ASU"]=cellSignalStrength.asuLevel.toString()
-            cellParam["Dbm"]=cellSignalStrength.dbm.toString()
-            cellParam["Level"]=cellSignalStrength.level.toString()
-            return cellParam
-        }
+    private fun getCellSignalParam(cellSignalStrength:  CellSignalStrengthWcdma): Map<String, String>{
+        val cellParam = mutableMapOf<String, String>()
+        cellParam["RSCP в ASU"]=cellSignalStrength.asuLevel.toString()
+        cellParam["Dbm"]=cellSignalStrength.dbm.toString()
+        cellParam["Level"]=cellSignalStrength.level.toString()
+        return cellParam
+    }
 
 
-        private fun getCellSignalParam(cellSignalStrength:  CellSignalStrengthWcdma): Map<String, String>{
-            val cellParam = mutableMapOf<String, String>()
-            cellParam["RSCP в ASU"]=cellSignalStrength.asuLevel.toString()
-            cellParam["Dbm"]=cellSignalStrength.dbm.toString()
-            cellParam["Level"]=cellSignalStrength.level.toString()
-            return cellParam
-        }
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun getCellSignalParam(cellSignalStrength:  CellSignalStrengthTdscdma): Map<String, String>{
+        val cellParam = mutableMapOf<String, String>()
+        cellParam["RSCP в ASU"]=cellSignalStrength.asuLevel.toString()
+        cellParam["Dbm"]=cellSignalStrength.dbm.toString()
+        cellParam["Level"]=cellSignalStrength.level.toString()
+        return cellParam
+    }
 
-
-        @RequiresApi(Build.VERSION_CODES.O)
-        private fun getCellSignalParam(cellSignalStrength:  CellSignalStrengthTdscdma): Map<String, String>{
-            val cellParam = mutableMapOf<String, String>()
-            cellParam["RSCP в ASU"]=cellSignalStrength.asuLevel.toString()
-            cellParam["Dbm"]=cellSignalStrength.dbm.toString()
-            cellParam["Level"]=cellSignalStrength.level.toString()
-            return cellParam
-        }
-
-        private fun getCellSignalParam(): Map<String, String>{
-            val cellParam = mutableMapOf<String, String>()
-            cellParam["Level"]="0"
-            return cellParam
+    private fun getCellSignalParam(): Map<String, String>{
+        val cellParam = mutableMapOf<String, String>()
+        cellParam["Level"]="0"
+        return cellParam
+    }
+        fun json(): MyCellInfoLteData {
+            this.read()
+            val sParam = if (this.signalParam.length>2){this.signalParam.drop(1).dropLast(1)} else {this.signalParam}
+            val sP = sParam.replace(",","")
+            return MyCellInfoLteData(sP, networkType, simOperatorName, simOperator, simCountyIso)
         }
 
     }
+
+@Serializable
+data class MyCellInfoLteData(val signal_param: String,
+                             val network_type: String,
+                             val sim_operator_name: String,
+                             val sim_operator: String,
+                             val sim_county_iso: String)

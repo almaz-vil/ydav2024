@@ -6,6 +6,7 @@ import android.content.Intent
 import android.database.Cursor
 import android.os.Build
 import android.telephony.SmsManager
+import kotlinx.serialization.Serializable
 import org.json.JSONObject
 
 class SmsOutput(context: Context, database: Database):DbWrite {
@@ -41,16 +42,6 @@ class SmsOutput(context: Context, database: Database):DbWrite {
         }
         cursor.close()
 
-    }
-
-    fun json(id: String):String{
-        this.id = id
-        this.read()
-        return """{"id":${this.id},
-                "sent":{"result":"${this.sent}",
-                        "time":"${this.sentTime}"},
-                "delivery":{"result":"${this.delivery}",
-                        "time":"${this.deliveryTime}"}}"""
     }
 
     fun writeSent(id: String, sent: String){
@@ -92,7 +83,6 @@ class SmsOutput(context: Context, database: Database):DbWrite {
             deliveryIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        //val smsManager = _context.getSystemService(SmsManager::class.java) as SmsManager
         val smsManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             _context.getSystemService<SmsManager>(SmsManager::class.java)
         } else {
@@ -107,4 +97,28 @@ class SmsOutput(context: Context, database: Database):DbWrite {
             deliveryIntentPending)
     }
 
+    fun json(id: String):SmsOutputData{
+        this.id = id
+        this.read()
+        return SmsOutputData(
+            id = this.id.toInt(),
+            sent = ResultStatus(
+                result = this.sent,
+                time = this.sentTime
+            ),
+            delivery = ResultStatus(
+                result = this.delivery,
+                time = this.deliveryTime
+            )
+            )
+    }
+
 }
+
+@Serializable
+data class SmsOutputData( val id: Int,
+                            val sent: ResultStatus,
+                            val delivery: ResultStatus)
+@Serializable
+data class ResultStatus(val result: String,
+                        val time: String)

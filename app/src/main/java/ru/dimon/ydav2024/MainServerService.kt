@@ -6,8 +6,8 @@ import android.app.Service
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
-import android.util.Log
 import androidx.core.app.NotificationCompat
+import kotlinx.serialization.json.Json
 import org.json.JSONObject
 import org.json.JSONTokener
 import java.io.BufferedReader
@@ -18,8 +18,6 @@ import java.lang.ref.WeakReference
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.Formatter
 import java.util.GregorianCalendar
 
@@ -61,7 +59,6 @@ class MainServerService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val ipHost = intent?.getStringExtra("Host")
         startForeground(NOTIFICATION_ID, newOngoingNotification(ipHost))
-        Log.d("Ydav2024", "servis host $ipHost" )
         val refConnect = WeakReference(this.applicationContext)
         Database.setContext(refConnect.get()!!)
         val batteryBroadcastReceiver = BatteryBroadcastReceiver()
@@ -75,9 +72,9 @@ class MainServerService : Service() {
         val smsInput = SmsInput(Database)
         //отправка СМС и их статус
         val smsOutput = SmsOutput(refConnect.get()!!,Database)
+        //USSD - команды
+        val ussdCommand = Ussd(refConnect.get()!!,Database)
         Thread{
-
-
             var connectWifi = true
             while (connectWifi){
                 var server: ServerSocket?
@@ -121,30 +118,26 @@ class MainServerService : Service() {
                                 catch (e: Exception){
                                     command = "INFO"
                                 }
-                            //    val time = LocalDateTime.now()
-                          //      val formatter = DateTimeFormatter.ofPattern("d MMMM yyyy EEEE HH:mm:ss ")
                                 val gregorianCalendar = GregorianCalendar()
                                 val formatter = Formatter()
-                                val t=gregorianCalendar.timeInMillis;
+                                val t=gregorianCalendar.timeInMillis
                                 val timeSend =  formatter.format("%tF %tT ",t, t)
 
                                 val outJson = when (command) {
                                     "INFO" -> {
-                                        """{"time":"$timeSend",
-                                       "battery":${battery.json()},
-                                       "signal":${myCellInfoLte.json()},
-                                       "sms":${smsInput.count()},
-                                       "phone":${phoneStatus.count()}}
-                                                                   
-                                      """
+                                        Json.encodeToString(Info(
+                                            time = timeSend.toString(),
+                                            battery = battery.json(),
+                                            signal = myCellInfoLte.json(),
+                                            sms = smsInput.count(),
+                                            phone = phoneStatus.count()))
                                     }
 
                                     "PHONE" -> {
                                         //информация о звонках
-                                        """{"time":"$timeSend",
-                                       "phone":${phoneStatus.json()}}
-                                                                   
-                                       """
+                                        Json.encodeToString(Phone(
+                                            time = timeSend.toString(),
+                                            phone = phoneStatus.json()))
                                     }
 
                                     "DELETE_PHONE" -> {
@@ -152,11 +145,9 @@ class MainServerService : Service() {
                                         val param = json?.getString("param")
                                         if (param != null)
                                             phoneStatus.delete(param)
-                                        """{"time":"$timeSend",
-                                       "phone":${phoneStatus.count()}}
-                                                                   
-                                      """
-
+                                        Json.encodeToString(DeletePhone(
+                                            time = timeSend.toString(),
+                                            phone = phoneStatus.count()))
                                     }
 
                                     "DELETE_SMS_INPUT" -> {
@@ -164,10 +155,10 @@ class MainServerService : Service() {
                                         val param = json?.getString("param")
                                         if (param != null)
                                                 smsInput.delete(param)
-                                        """{"time":"$timeSend",
-                                       "sms":${smsInput.count()}}
-                                                                   
-                                      """
+                                        Json.encodeToString(DeleteSmsInput(
+                                            time = timeSend.toString(),
+                                            sms = smsInput.count()
+                                        ))
                                      }
 
                                     "SMS_OUTPUT" -> {
@@ -177,46 +168,62 @@ class MainServerService : Service() {
                                         if (param != null) {
                                             id = smsOutput.send(JSONObject(param))
                                         }
-                                        """{"time":"$timeSend",
-                                       "status":${smsOutput.json(id)}}
-                                                                   
-                                      """
+                                        Json.encodeToString(SmsOutputD(
+                                            time = timeSend.toString(),
+                                            status = smsOutput.json(id)
+                                        ))
                                     }
 
                                     "SMS_OUTPUT_STATUS" -> {
                                         //Получение статуса отправленной СМС
                                         val id = json?.getString("param")
-                                        """{"time":"$timeSend",
-                                       "status":${smsOutput.json(id!!)}}
-                                                                   
-                                      """
+                                        Json.encodeToString(SmsOutputD(
+                                            time = timeSend.toString(),
+                                            status = smsOutput.json(id!!)
+                                        ))
                                     }
 
                                     "SMS_INPUT" -> {
                                         //выборка входящий СМС
-                                        """{"time":"$timeSend",
-                                       "sms":${smsInput.json()}}
-                                                                   
-                                       """
+                                        Json.encodeToString(SmsInputD(
+                                            time = timeSend.toString(),
+                                            sms = smsInput.json()
+                                        ))
+                                    }
+
+                                    "USSD_SEND" -> {
+                                        //Отправка USSD
+                                        val ussdText = json?.getString("param")
+                                        ussdCommand.send(ussdText)
+                                        Json.encodeToString(UssdSend(
+                                            time = timeSend.toString(),
+                                            ussd = ussdCommand.json()
+                                        ))
+                                    }
+
+                                    "USSD_RESPOND" -> {
+                                        //USSD ответ
+                                        Json.encodeToString(UssdSend(
+                                            time = timeSend.toString(),
+                                            ussd = ussdCommand.json()
+                                        ))
                                     }
 
                                     "CONTACT" -> {
                                         //выборка контактов
                                         val contacts = Contacts(refConnect.get()!!)
-                                        """{"time":"$timeSend",
-                                       "contact":${contacts.json()}}
-                                                                   
-                                       """
+                                        Json.encodeToString(ContactD(
+                                            time = timeSend.toString(),
+                                            contact = contacts.json()
+                                        ))
                                     }
                                     else -> {
-                                        """{"time":"$timeSend",
-                                       "ipHost":"$ipHost"}
-                                                                   
-                                      """
-
+                                        Json.encodeToString(HostD(
+                                            time = timeSend.toString(),
+                                            ipHost = ipHost!!
+                                        ))
                                     }
                                 }
-
                                 output.println(outJson)
                                 output.close()
                                 outputStream.close()

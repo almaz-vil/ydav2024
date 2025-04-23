@@ -1,6 +1,8 @@
 package ru.dimon.ydav2024
 
 import android.database.Cursor
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 /**
  * Запись и чтение информации о батареи устройства
@@ -47,12 +49,11 @@ class Battery(database: Database):DbWrite {
 
     }
 
-    fun json():String{
+    fun json():BatteryData{
         this.read()
-        return """{"temperature":${this.temperature},
-                "level":${this.level},
-                "status":"${this.status}",
-                "charge":"${this.charge}"}"""
+        return BatteryData(temperature, level, status, charge)
     }
-
 }
+
+@Serializable
+data class BatteryData(val temperature: Float, val level: Float, val status: String, val charge: String){}
