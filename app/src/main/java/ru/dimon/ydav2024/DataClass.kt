@@ -33,3 +33,7 @@ data class ContactD(val time: String,
 @Serializable
 data class HostD(val time: String,
                  val ipHost: String)
+
+@Serializable
+data class UssdData(val failure: String,
+                    val response: String)

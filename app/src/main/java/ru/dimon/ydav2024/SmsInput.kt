@@ -47,8 +47,8 @@ class SmsInput(database: Database):DbWrite {
                 val time = cursor.getString(idTime)
                 val phone = cursor.getString(idPhone)
                 val body =cursor.getString(idBody)
-                val js_body = JSONObject.quote(body)
-                smsList.add(SmsData(id.toString(), time, phone, js_body))
+                val js_body = body.replace("'","");
+                smsList.add(SmsData(id.toString(), time, phone, js_body.replace("\"","")))
             } while (cursor.moveToNext())
         }
         cursor.close()

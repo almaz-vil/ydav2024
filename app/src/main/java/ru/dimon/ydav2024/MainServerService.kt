@@ -6,6 +6,7 @@ import android.app.Service
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import kotlinx.serialization.json.Json
 import org.json.JSONObject
@@ -122,7 +123,6 @@ class MainServerService : Service() {
                                 val formatter = Formatter()
                                 val t=gregorianCalendar.timeInMillis
                                 val timeSend =  formatter.format("%tF %tT ",t, t)
-
                                 val outJson = when (command) {
                                     "INFO" -> {
                                         Json.encodeToString(Info(
@@ -153,6 +153,7 @@ class MainServerService : Service() {
                                     "DELETE_SMS_INPUT" -> {
                                         //Удаление входящих СМС
                                         val param = json?.getString("param")
+                                        Log.d("Ydav2024", "onStartCommand: $param")
                                         if (param != null)
                                                 smsInput.delete(param)
                                         Json.encodeToString(DeleteSmsInput(
