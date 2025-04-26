@@ -34,17 +34,17 @@ class Contacts(context: Context) {
                     val idNumber = ContactsContract.CommonDataKinds.Phone.NUMBER
                     if (cursorT!!.moveToFirst()) {
                         do {
-                            val phone = cursorT.getString(cursorT.getColumnIndexOrThrow(idNumber))
-                            phones.add(phone)
+                            val phone = cursorT.getString(cursorT.getColumnIndexOrThrow(idNumber)).replace(" ","")
+                            phones.add(phone.replace("-",""))
                         } while (cursorT.moveToNext())
                     }
                     cursorT.close()
-                    persion.add(ContactData(name, phones))
+                    persion.add(ContactData(name, phones.distinct()))
                 }
             } while (cursor.moveToNext())
         }
         cursor.close()
-        return persion
+        return persion.distinct()
     }
 
 

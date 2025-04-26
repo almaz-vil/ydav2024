@@ -27,8 +27,8 @@ class ApplicationYdav: Application() {
         val statusCallBroadcastReceiver = StatusCallBroadcastReceiver()
         registerReceiver(statusCallBroadcastReceiver, IntentFilter("android.intent.action.PHONE_STATE"))
         //Для учёта изменений состояния входящих СМС
-        val smsInputBroadcastReceiver = SmsInputBroadcastReceiver()
-        registerReceiver(smsInputBroadcastReceiver, IntentFilter("android.provider.Telephony.SMS_RECEIVED"))
+    //    val smsInputBroadcastReceiver = SmsInputBroadcastReceiver()
+      //  registerReceiver(smsInputBroadcastReceiver, IntentFilter("android.provider.Telephony.SMS_RECEIVED"))
         //Для учёта изменений состояния WIFI
         val wifiBroadcastReceiver = WifiBroadcastReceiver()
         registerReceiver(wifiBroadcastReceiver, IntentFilter("android.net.wifi.WIFI_STATE_CHANGED"))
