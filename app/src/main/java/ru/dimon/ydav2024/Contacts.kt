@@ -17,9 +17,9 @@ class Contacts(context: Context) {
         val idID = cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
         val idPhone = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)
         val persion = ArrayList<ContactData>()
-        val phones = ArrayList<String>()
         if (cursor.moveToFirst()) {
             do {
+                val phones = ArrayList<String>()
                 val name = cursor.getString(idName)
                 val id = cursor.getString(idID)
                 val countPhone = cursor.getInt(idPhone)
@@ -40,7 +40,6 @@ class Contacts(context: Context) {
                     }
                     cursorT.close()
                     persion.add(ContactData(name, phones))
-
                 }
             } while (cursor.moveToNext())
         }
