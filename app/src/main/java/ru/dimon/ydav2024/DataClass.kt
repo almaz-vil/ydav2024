@@ -31,6 +31,9 @@ data class UssdSend(val time: String,
 data class ContactD(val time: String,
                     val contact: List<ContactData>)
 @Serializable
+data class ContactCount(val time: String,
+                    val count: Int)
+@Serializable
 data class HostD(val time: String,
                  val ipHost: String)
 

@@ -1,54 +1,74 @@
 package ru.dimon.ydav2024
 
 import android.content.Context
+import android.net.Uri
 import android.provider.ContactsContract
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import java.lang.ref.WeakReference
+
 
 class Contacts(context: Context) {
 
     private val _context=WeakReference(context)
 
+    private fun deleteContact(contactId: String):Int{
+        val context = _context.get()
+        val uri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_URI, contactId)
+        if (context != null) {
+          return  context.getContentResolver().delete(uri, null, null)
+        }
+        return 0
+    }
+
+    fun delete(where: String):Int{
+        var count =0
+        if (where.contains(",")) {
+            for (id in where.split(",")) {
+               count=count+deleteContact(id)
+            }
+        }else{
+            count=count+deleteContact(where)
+        }
+        return count
+    }
     fun json():List<ContactData> {
         val context = _context.get()
-        val cursor = context!!.contentResolver.query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null)
-        val idName = cursor!!.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME)
-        val idID = cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
-        val idPhone = cursor.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)
+        val cursorContact = context!!.contentResolver.query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null)
+        val idName = cursorContact!!.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
+        val idID = cursorContact.getColumnIndexOrThrow(ContactsContract.Contacts._ID)
+        val idPhone = cursorContact.getColumnIndexOrThrow(ContactsContract.Contacts.HAS_PHONE_NUMBER)
+        val idNumber = ContactsContract.CommonDataKinds.Phone.NUMBER
         val persion = ArrayList<ContactData>()
-        if (cursor.moveToFirst()) {
+        if (cursorContact.moveToFirst()) {
             do {
                 val phones = ArrayList<String>()
-                val name = cursor.getString(idName)
-                val id = cursor.getString(idID)
-                val countPhone = cursor.getInt(idPhone)
+                val name = cursorContact.getString(idName)
+                val id = cursorContact.getString(idID)
+                val countPhone = cursorContact.getInt(idPhone)
                 if (countPhone > 0) {
-                    val cursorT = context.contentResolver.query(
+                    val cursorPhone = context.contentResolver.query(
                         ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                         null,
                         ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
-                        arrayOf(id),
+                         arrayOf(id),
                         null
                     )
-                    val idNumber = ContactsContract.CommonDataKinds.Phone.NUMBER
-                    if (cursorT!!.moveToFirst()) {
+                    if (cursorPhone!!.moveToFirst()) {
                         do {
-                            val phone = cursorT.getString(cursorT.getColumnIndexOrThrow(idNumber)).replace(" ","")
+                            val phone = cursorPhone.getString(cursorPhone.getColumnIndexOrThrow(idNumber)).replace(" ","")
                             phones.add(phone.replace("-",""))
-                        } while (cursorT.moveToNext())
+                        } while (cursorPhone.moveToNext())
                     }
-                    cursorT.close()
-                    persion.add(ContactData(name, phones.distinct()))
+                    cursorPhone.close()
+                    persion.add(ContactData(id!!, name, phones.distinct()))
                 }
-            } while (cursor.moveToNext())
+            } while (cursorContact.moveToNext())
         }
-        cursor.close()
+        cursorContact.close()
         return persion.distinct()
     }
-
 
 }
 
 @Serializable
-data class ContactData(val name: String, val phone: List<String>)
+data class ContactData(val id: String, val name: String, val phone: List<String>)

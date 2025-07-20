@@ -131,6 +131,7 @@ class MainActivity : ComponentActivity() {
            "android.permission.ACCESS_COARSE_LOCATION" to " \"Местоположение\"",
            "android.permission.RECEIVE_SMS" to " \"СМС\"",
            "android.permission.READ_CONTACTS" to " \"Контакты\"",
+           "android.permission.WRITE_CONTACTS" to " \"Запись контактов\"",
            "android.permission.READ_PHONE_STATE" to " \"Телефон\"",
            "android.permission.SEND_SMS" to " \"Отправка СМС\"",
    //        "android.permission.CALL_PHONE" to " \"Звонки по телефону\""
@@ -140,6 +141,7 @@ class MainActivity : ComponentActivity() {
            "android.permission.ACCESS_COARSE_LOCATION" to true,
            "android.permission.RECEIVE_SMS" to true,
            "android.permission.READ_CONTACTS" to true,
+           "android.permission.WRITE_CONTACTS" to true,
            "android.permission.READ_PHONE_STATE" to true,
            "android.permission.SEND_SMS" to true,
  //          "android.permission.CALL_PHONE" to true
@@ -149,6 +151,7 @@ class MainActivity : ComponentActivity() {
                "android.permission.ACCESS_COARSE_LOCATION" to " \"Местоположение\"",
                "android.permission.RECEIVE_SMS" to " \"СМС\"",
                "android.permission.READ_CONTACTS" to " \"Контакты\"",
+               "android.permission.WRITE_CONTACTS" to " \"Запись контактов\"",
                "android.permission.READ_PHONE_STATE" to " \"Телефон\"",
                "android.permission.SEND_SMS" to " \"Отправка СМС\""
            )
@@ -156,6 +159,7 @@ class MainActivity : ComponentActivity() {
                "android.permission.ACCESS_COARSE_LOCATION" to true,
                "android.permission.RECEIVE_SMS" to true,
                "android.permission.READ_CONTACTS" to true,
+               "android.permission.WRITE_CONTACTS" to true,
                "android.permission.READ_PHONE_STATE" to true,
                "android.permission.SEND_SMS" to true
            )

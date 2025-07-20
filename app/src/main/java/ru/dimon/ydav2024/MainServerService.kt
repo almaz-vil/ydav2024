@@ -75,6 +75,8 @@ class MainServerService : Service() {
         val smsOutput = SmsOutput(refConnect.get()!!,Database)
         //USSD - команды
         val ussdCommand = Ussd(refConnect.get()!!,Database)
+        //Контакты
+        val contacts = Contacts(refConnect.get()!!)
         Thread{
             var connectWifi = true
             while (connectWifi){
@@ -150,6 +152,19 @@ class MainServerService : Service() {
                                             phone = phoneStatus.count()))
                                     }
 
+                                    "DELETE_CONTACT" -> {
+                                        //Удаление контактов
+                                        val param = json?.getString("param")
+                                        var count = 0
+                                        if (param != null)
+                                            count=contacts.delete(param)
+                                        //выборка контактов
+                                        Json.encodeToString(ContactCount(
+                                            time = timeSend.toString(),
+                                            count = count
+                                        ))
+                                    }
+
                                     "DELETE_SMS_INPUT" -> {
                                         //Удаление входящих СМС
                                         val param = json?.getString("param")
@@ -212,7 +227,6 @@ class MainServerService : Service() {
 
                                     "CONTACT" -> {
                                         //выборка контактов
-                                        val contacts = Contacts(refConnect.get()!!)
                                         Json.encodeToString(ContactD(
                                             time = timeSend.toString(),
                                             contact = contacts.json()
