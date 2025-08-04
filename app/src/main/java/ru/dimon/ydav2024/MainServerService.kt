@@ -165,6 +165,19 @@ class MainServerService : Service() {
                                         ))
                                     }
 
+                                    "ADD_CONTACT" -> {
+                                        //Добавление контакта
+                                        val param = json?.getString("param")
+                                        var id = ""
+                                        if (param != null)
+                                            id=contacts.add(JSONObject(param))
+                                        //ID контакта
+                                        Json.encodeToString(ContactID(
+                                            time = timeSend.toString(),
+                                            ID = id
+                                        ))
+                                    }
+
                                     "DELETE_SMS_INPUT" -> {
                                         //Удаление входящих СМС
                                         val param = json?.getString("param")
