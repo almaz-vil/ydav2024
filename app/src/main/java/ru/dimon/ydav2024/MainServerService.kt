@@ -170,11 +170,11 @@ class MainServerService : Service() {
                                         val param = json?.getString("param")
                                         var id = ""
                                         if (param != null)
-                                            id=contacts.add(JSONObject(param))
+                                            id =contacts.add(JSONObject(param))
                                         //ID контакта
                                         Json.encodeToString(ContactID(
                                             time = timeSend.toString(),
-                                            ID = id
+                                            id = id
                                         ))
                                     }
 

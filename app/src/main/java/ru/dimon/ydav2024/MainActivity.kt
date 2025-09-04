@@ -39,7 +39,7 @@ import java.lang.ref.WeakReference
 class MainActivity : ComponentActivity() {
     @Composable
     private  fun Www(){
-        Text("Ydav2024 for Android версия: 1.2.0")
+        Text("Ydav2024 for Android версия: 1.3.0")
         Text("Клиента для сервера можно найти на сайте https://ydav-android.p-k-53.ru/",
             modifier = Modifier.clickable(onClick = {
                 val url = "https://ydav-android.p-k-53.ru"

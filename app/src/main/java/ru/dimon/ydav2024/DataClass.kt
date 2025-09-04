@@ -35,7 +35,7 @@ data class ContactCount(val time: String,
                     val count: Int)
 @Serializable
 data class ContactID(val time: String,
-                     val ID:String)
+                     val id: String)
 @Serializable
 data class HostD(val time: String,
                  val ipHost: String)

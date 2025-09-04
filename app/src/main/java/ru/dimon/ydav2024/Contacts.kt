@@ -1,6 +1,5 @@
 package ru.dimon.ydav2024
 
-import android.content.ContentProviderOperation
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
@@ -28,10 +27,11 @@ class Contacts(context: Context) {
         val context = _context.get()
         val name = param.getString("name")
         val phone = param.getString("phone")
+        val group = param.getString("group")
 
         val values = ContentValues().apply {
             put(ContactsContract.RawContacts.ACCOUNT_TYPE, 0)
-            put(ContactsContract.RawContacts.ACCOUNT_NAME, "ydav2024")
+            put(ContactsContract.RawContacts.ACCOUNT_NAME, group)
         }
         val rawContactUri =  context!!.contentResolver.insert(ContactsContract.RawContacts.CONTENT_URI, values)
         val rawContactId = ContentUris.parseId(rawContactUri!!)
@@ -78,6 +78,21 @@ class Contacts(context: Context) {
                 val phones = ArrayList<String>()
                 val name = cursorContact.getString(idName)
                 val id = cursorContact.getString(idID)
+                var cursorGrup = context.contentResolver.query(
+                    ContactsContract.RawContacts.CONTENT_URI,
+                    null,
+                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                    arrayOf(id),
+                    null)
+                val idAccountName = cursorGrup!!.getColumnIndexOrThrow(ContactsContract.RawContacts.ACCOUNT_NAME)
+                var groups = ArrayList<String>()
+                if (cursorGrup!!.moveToFirst()){
+                    do {
+                        groups.add(cursorGrup.getString(idAccountName))
+
+                    } while (cursorGrup.moveToNext())
+                }
+                cursorGrup.close()
                 val countPhone = cursorContact.getInt(idPhone)
                 if (countPhone > 0) {
                     val cursorPhone = context.contentResolver.query(
@@ -94,8 +109,9 @@ class Contacts(context: Context) {
                         } while (cursorPhone.moveToNext())
                     }
                     cursorPhone.close()
-                    persion.add(ContactData(id!!, name, phones.distinct()))
+
                 }
+                persion.add(ContactData(id.toInt(), name, phones.distinct(), groups.distinct()))
             } while (cursorContact.moveToNext())
         }
         cursorContact.close()
@@ -105,4 +121,4 @@ class Contacts(context: Context) {
 }
 
 @Serializable
-data class ContactData(val id: String, val name: String, val phone: List<String>)
+data class ContactData(val id: Int, val name: String, val phone: List<String>, val group: List<String>)
